@@ -1,0 +1,366 @@
+AI Handover – Planning Poker Web App
+1. Goal
+Recreate a real‑time Planning Poker web app for agile estimation with:
+
+A visual table in the center, participants arranged around it as seats.
+Participants list on the left as tiles.
+Backlog on the right (list of items to estimate).
+Cards at the bottom, Reveal/Reset buttons under the table.
+Name + avatar selection dialog on first load.
+Real-time sync between users using Socket.IO.
+Deployed on a Node‑friendly host (e.g., Render) as a single Node.js web service.
+No external integrations (Azure DevOps, Vercel serverless) are needed in the final version. The last agreed scope is:
+
+Simple Express + Socket.IO server.
+Static HTML/JS/CSS front-end.
+Backlog items are entered manually into the UI (paste from ADO or elsewhere).
+Multi‑user real-time behavior via WebSockets.
+Important: There were multiple iterations experimenting with Azure DevOps integration and Vercel; the final implementation removes that complexity and returns to a clean Node/Socket.IO + static front-end design.
+
+2. Final Architecture
+2.1 High-level components
+Node.js server (server.js)
+
+Uses Express to serve static assets from public/.
+Uses Socket.IO on the same HTTP server for real-time signaling.
+Maintains in‑memory room state:
+Per room: revealed flag + votes map.
+Client UI (public/index.html + CSS + embedded JS)
+
+Pure HTML/JS/CSS (no frameworks).
+Socket.IO client connects back to the server.
+Layout:
+Top: “Your name” (read-only display), room name, status line.
+Left: Participants as tiles.
+Center: Round table + Reveal/Reset + summary.
+Right: Backlog items & controls.
+Bottom: Planning poker cards.
+First-run dialog for:
+User name.
+Avatar choice (6 available avatars).
+Static assets
+
+/public/avatars/avatar1.jpg … /avatar6.jpg (or PNG).
+2.2 No external APIs
+No Azure DevOps integration in this final version.
+No PATs or environment variables required.
+No database; everything is in memory.
+3. Folder Structure
+The final, desired structure:
+
+text
+
+Copy code
+planning-poker/
+  server.js
+  package.json
+  package-lock.json     # optional but typical
+  .gitignore            # ignore node_modules etc.
+  public/
+    index.html
+    avatars/
+      avatar1.jpg
+      avatar2.jpg
+      avatar3.jpg
+      avatar4.jpg
+      avatar5.jpg
+      avatar6.jpg
+
+.gitignore should at least contain:
+
+gitignore
+
+Copy code
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+.env
+
+4. Server Implementation (server.js)
+The final server.js should:
+
+Create an Express app.
+Serve static files from public.
+Create an HTTP server and attach Socket.IO.
+Maintain rooms in memory.
+Listen on process.env.PORT || 3000.
+4.1 Target server.js content
+js
+
+Copy code
+// server.js
+// Simple Planning Poker server without external integrations
+
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*" },
+});
+
+// Serve static files
+app.use(express.static("public"));
+
+// In-memory room state: { roomId: { revealed: bool, votes: { name: value } } }
+const rooms = {};
+
+function getRoom(roomId) {
+  if (!rooms[roomId]) {
+    rooms[roomId] = { revealed: false, votes: {} };
+  }
+  return rooms[roomId];
+}
+
+io.on("connection", (socket) => {
+  let currentRoom = null;
+  let currentName = null;
+
+  socket.on("joinRoom", ({ roomId, name }) => {
+    if (currentRoom) socket.leave(currentRoom);
+
+    currentRoom = roomId || "default-room";
+    currentName = name || "Anonymous";
+
+    socket.join(currentRoom);
+    socket.emit("stateUpdate", getRoom(currentRoom));
+  });
+
+  socket.on("updateName", (name) => {
+    currentName = name || "Anonymous";
+  });
+
+  socket.on("vote", (value) => {
+    if (!currentRoom) return;
+    const room = getRoom(currentRoom);
+    room.votes[currentName || "Anonymous"] = value;
+    io.to(currentRoom).emit("stateUpdate", room);
+  });
+
+  socket.on("reveal", () => {
+    if (!currentRoom) return;
+    const room = getRoom(currentRoom);
+    room.revealed = true;
+    io.to(currentRoom).emit("stateUpdate", room);
+  });
+
+  socket.on("reset", () => {
+    if (!currentRoom) return;
+    rooms[currentRoom] = { revealed: false, votes: {} };
+    io.to(currentRoom).emit("stateUpdate", rooms[currentRoom]);
+  });
+
+  socket.on("disconnect", () => {
+    // No further cleanup done in current implementation
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Planning Poker running at http://localhost:${PORT}`);
+});
+
+5. Front-end Implementation (public/index.html)
+5.1 Requirements & behavior
+The front‑end should:
+
+On load:
+
+Show an overlay dialog asking:
+Name (required, fallback “Anonymous”).
+Avatar choice (from 6 images).
+When the user presses Enter/Continue:
+Hide the dialog.
+Set nameInput at top.
+Emit joinRoom with room ID derived from window.location.hash.
+Emit updateName.
+Maintain local state:
+
+items: array of backlog item strings (entered manually).
+currentItemIndex: index of current item.
+Backlog:
+
+Textarea itemsInput for “Items (one per line)”.
+Button Add Items:
+Splits by newline, trims, filters empties.
+Stores into items.
+Sets currentItemIndex = 0 if not empty.
+Renders backlog tiles.
+Previous and Next buttons:
+Change currentItemIndex and call handleReset() to clear votes.
+Backlog tiles:
+Show “Item X of N”.
+Click to select that item (and reset votes).
+Participants:
+
+Derived from currentState.votes coming from server.
+Each tile shows:
+Avatar image (from chosen avatar).
+Name.
+“Hidden” (grey) or actual value after Reveal.
+Table:
+
+Seats arranged in a circle around the center:
+centerX = 210, centerY = 210, radius ~ 190.
+Angle computed as 2π * index / count - π/2, so first starts at the top.
+Each seat has avatar, name, and Hidden/value.
+Cards:
+
+Bottom row values:
+
+js
+
+Copy code
+const FIB_CARDS = ["0", "0.5", "1", "2", "3", "5", "8", "13", "20", "40", "100", "?"];
+
+Clicking a card:
+
+Locally mark it as selected.
+Emit vote with that value.
+Reveal/Reset:
+
+Reveal emits reveal (no client‑side computation needed; server marks state).
+Reset emits reset.
+Summary:
+
+After Reveal, compute from currentState.votes:
+Numeric min/max.
+Numeric average, fixed to 2 decimals.
+Only numeric votes included (non‑numeric like “?” ignored).
+5.2 Avatar handling
+Global AVATAR_FILES:
+
+js
+
+Copy code
+const AVATAR_FILES = [
+  "/avatars/avatar1.jpg",
+  "/avatars/avatar2.jpg",
+  "/avatars/avatar3.jpg",
+  "/avatars/avatar4.jpg",
+  "/avatars/avatar5.jpg",
+  "/avatars/avatar6.jpg"
+];
+
+myAvatarIndex is initially 0; set via avatar grid in dialog.
+
+getMyAvatarUrl() returns AVATAR_FILES[myAvatarIndex].
+
+Current simple implementation uses the same avatar for all seats/tiles; improving this to true per‑user avatar mapping would require sending an avatar identifier with each joinRoom and storing it server‑side.
+
+6. package.json
+The package.json should be minimal and support npm start:
+
+json
+
+Copy code
+{
+  "name": "planning-poker",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}
+
+7. Running Locally (for verification)
+Steps for the AI to simulate / verify
+Install dependencies:
+
+bash
+
+Copy code
+npm install
+
+Start server:
+
+bash
+
+Copy code
+npm start
+
+In a browser (or headless test environment), load:
+
+text
+
+Copy code
+http://localhost:3000/#team1
+
+Confirm:
+
+Welcome dialog appears.
+Name/avatars can be selected.
+Backlog can load items from textarea.
+Cards can be clicked, Reveal/Reset works.
+Simulate multiple clients:
+
+Open multiple browser tabs or simulate multiple connections to Socket.IO endpoint /socket.io.
+Confirm that:
+vote events propagate.
+reveal and reset propagate.
+8. Deployment to a Node-friendly Host (Render)
+Target behavior for deployment
+The AI should ensure the project can be deployed as a single Node web service (no serverless splitting):
+
+Build: npm install
+Start: npm start
+Host listens on process.env.PORT or 3000.
+Generic steps (Render example)
+Push this repo to GitHub.
+On Render:
+New → Web Service → attach GitHub repo.
+Build command: npm install.
+Start command: npm start.
+Render sets PORT env var; app picks it up.
+URL from Render: https://<app-name>.onrender.com/#team1.
+Important constraint: Because state is in memory on a single process, you should:
+
+Run only one instance of the service (no horizontal scaling).
+Understand that a redeploy resets all active sessions.
+9. Out-of-Scope / Removed Functionality
+The following were explored during development but are not part of the final implementation:
+
+Azure DevOps integration
+
+Earlier we added:
+/api/backlog to pull work items via WIQL.
+/api/backlogByIds to fetch stories by ID.
+PAT handling via ADO_PAT env variable.
+This has been removed in the final version to keep the app simple and portable.
+If re-introduced, must be done with:
+Secure env variables.
+Proper filtering by WorkItemType and AreaPath.
+Vercel deployment
+
+Tried to deploy the Node/Socket.IO server to Vercel.
+Hit Cannot GET / and serverless/WebSocket limitations.
+Final decision: use a Node‑friendly host (Render/Railway/Fly/Heroku) instead.
+10. Known Limitations
+In‑memory state only:
+Restarting the server wipes all votes and backlog items.
+Per‑client avatars not persisted server‑side:
+All seats/tiles currently use the same avatar as the local user; upgrading to per‑user avatars requires extending server state.
+No authentication / access control:
+Anyone with the URL can join a room and vote.
+If hosted publicly, consider adding a simple password or SSO in front.
+11. Summary of Key Decisions for Re-Creation
+Architecture: Single Node.js/Express + Socket.IO server; static front-end in public/.
+UI layout: Participants left, table center, backlog right, cards bottom.
+Behavior: Manual backlog entry; real-time card selection; reveal+reset; simple summary.
+No ADO integration / no Vercel in the final implementation to keep it simple and portable.
+Deployment target: Any Node-friendly host that can run node server.js and support WebSockets.
+An AI agent recreating this project should:
+
+Rebuild server.js exactly as above.
+Rebuild public/index.html with the described layout and behavior.
+Ensure the Socket.IO event names and structures (joinRoom, updateName, vote, reveal, reset, stateUpdate) match exactly so multi-user real-time behavior works.
+Package with package.json and static assets under public/, then run with npm start and verify via browser.
