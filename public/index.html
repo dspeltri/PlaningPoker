@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Planning Poker</title>
 
-  <!-- Bootstrap 4 CSS (for dialog Continue button only) -->
   <link
     rel="stylesheet"
     href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
@@ -80,7 +79,6 @@
       color: #444;
     }
 
-    /* Main layout: participants | table | backlog */
     .middle-layout {
       flex: 1;
       display: grid;
@@ -96,7 +94,6 @@
       }
     }
 
-    /* Participants panel */
     .participants-panel {
       background: transparent;
       border: none;
@@ -156,7 +153,6 @@
       color: #333;
     }
 
-    /* Center: table, center buttons, summary */
     .center-panel {
       display: flex;
       flex-direction: column;
@@ -256,7 +252,6 @@
       margin-top: 4px;
     }
 
-    /* Right: backlog (items above, input below) */
     .backlog-panel {
       background: transparent;
       border: none;
@@ -362,7 +357,6 @@
       background-color: #fff;
     }
 
-    /* Bottom: cards row, centered */
     .cards-row {
       margin-top: 10px;
       padding-top: 8px;
@@ -378,7 +372,6 @@
       justify-content: center;
     }
 
-    /* Voting cards */
     .vote-card {
       width: 48px;
       height: 64px;
@@ -402,7 +395,6 @@
       border-color: #003a80;
     }
 
-    /* Shared style for blue action buttons */
     .action-button {
       cursor: pointer;
       border-radius: 0.5rem;
@@ -442,7 +434,6 @@
       border-color: #004f9f;
     }
 
-    /* Name display (read-only) */
     .name-container {
       display: flex;
       flex-direction: column;
@@ -478,7 +469,6 @@
       width: 100%;
     }
 
-    /* Initial dialog overlay */
     .overlay {
       position: fixed;
       inset: 0;
@@ -654,7 +644,7 @@
     "/avatars/avatar1.jpg",
     "/avatars/avatar2.jpg",
     "/avatars/avatar3.jpg",
-	"/avatars/avatar4.jpg",
+    "/avatars/avatar4.jpg",
     "/avatars/avatar5.jpg",
     "/avatars/avatar6.jpg"
   ];
@@ -676,16 +666,13 @@
   const resetBtn = document.getElementById("resetBtn");
   const seatsLayer = document.getElementById("seatsLayer");
   const tableAverage = document.getElementById("tableAverage");
-
   const participantsList = document.getElementById("participantsList");
-
   const itemsInput = document.getElementById("itemsInput");
   const loadItemsBtn = document.getElementById("loadItemsBtn");
   const prevItemBtn = document.getElementById("prevItemBtn");
   const nextItemBtn = document.getElementById("nextItemBtn");
   const backlogList = document.getElementById("backlogList");
   const itemIndexLabel = document.getElementById("itemIndexLabel");
-
   const overlay = document.getElementById("nameAvatarOverlay");
   const dialogNameInput = document.getElementById("dialogNameInput");
   const avatarGrid = document.getElementById("avatarGrid");
@@ -695,16 +682,20 @@
   roomNameDisplay.textContent = ROOM_ID;
 
   let socket = null;
+  // votes shape: { name: { value, avatar } }
   let currentState = { revealed: false, votes: {} };
   let myCurrentVote = null;
   let myAvatarIndex = 0;
 
+  // Backlog is now server-synced; local copy mirrors server state
   let items = [];
   let currentItemIndex = -1;
 
   function getMyAvatarUrl() {
     return AVATAR_FILES[myAvatarIndex] || AVATAR_FILES[0];
   }
+
+  // ─── Backlog ───────────────────────────────────────────────────────────────
 
   function updateBacklogTiles() {
     backlogList.innerHTML = "";
@@ -717,9 +708,7 @@
     items.forEach((text, idx) => {
       const wrapper = document.createElement("div");
       wrapper.className = "backlog-item-tile";
-      if (idx === currentItemIndex) {
-        wrapper.classList.add("current");
-      }
+      if (idx === currentItemIndex) wrapper.classList.add("current");
 
       const card = document.createElement("div");
       card.className = "backlog-card";
@@ -743,51 +732,42 @@
       card.appendChild(title);
       card.appendChild(date);
       card.appendChild(arrow);
-
       wrapper.appendChild(card);
-      wrapper.addEventListener("click", () => {
-        goToItem(idx);
-      });
-
+      wrapper.addEventListener("click", () => goToItem(idx));
       backlogList.appendChild(wrapper);
     });
 
-    itemIndexLabel.textContent = `Item ${currentItemIndex + 1} of ${items.length}`;
+    itemIndexLabel.textContent =
+      currentItemIndex >= 0 ? `Item ${currentItemIndex + 1} of ${items.length}` : "";
   }
 
+  // Navigate to an item — tells the server, which resets votes for everyone
   function goToItem(newIndex) {
     if (!items.length) return;
     if (newIndex < 0 || newIndex >= items.length) return;
-    currentItemIndex = newIndex;
-    handleReset();
-    updateBacklogTiles();
+    if (!socket) return;
+    socket.emit("setBacklogIndex", newIndex);
   }
 
   loadItemsBtn.addEventListener("click", () => {
     const raw = itemsInput.value || "";
-    items = raw
+    const parsed = raw
       .split(/\r?\n/)
       .map((s) => s.trim())
       .filter(Boolean);
-    if (items.length) {
-      currentItemIndex = 0;
-      statusText.textContent = `Loaded ${items.length} items from text.`;
+
+    if (parsed.length) {
+      statusText.textContent = `Loaded ${parsed.length} items. Syncing to room…`;
+      socket && socket.emit("setBacklog", { items: parsed, currentIndex: 0 });
     } else {
-      currentItemIndex = -1;
       statusText.textContent = "No items found in textarea.";
     }
-    updateBacklogTiles();
   });
 
-  prevItemBtn.addEventListener("click", () => {
-    if (!items.length) return;
-    goToItem(currentItemIndex - 1);
-  });
+  prevItemBtn.addEventListener("click", () => goToItem(currentItemIndex - 1));
+  nextItemBtn.addEventListener("click", () => goToItem(currentItemIndex + 1));
 
-  nextItemBtn.addEventListener("click", () => {
-    if (!items.length) return;
-    goToItem(currentItemIndex + 1);
-  });
+  // ─── Cards ─────────────────────────────────────────────────────────────────
 
   function renderCards() {
     cardsContainer.innerHTML = "";
@@ -803,13 +783,11 @@
 
   function highlightSelectedCard() {
     document.querySelectorAll(".vote-card").forEach((card) => {
-      if (card.dataset.value === myCurrentVote) {
-        card.classList.add("selected");
-      } else {
-        card.classList.remove("selected");
-      }
+      card.classList.toggle("selected", card.dataset.value === myCurrentVote);
     });
   }
+
+  // ─── Seats & participants ──────────────────────────────────────────────────
 
   function renderSeats() {
     seatsLayer.innerHTML = "";
@@ -823,7 +801,11 @@
 
     entries.sort((a, b) => a[0].localeCompare(b[0]));
 
-    entries.forEach(([name, value], index) => {
+    entries.forEach(([name, info], index) => {
+      // Support both old shape (string) and new shape ({ value, avatar })
+      const value  = typeof info === "object" ? info.value  : info;
+      const avatar = typeof info === "object" ? info.avatar : getMyAvatarUrl();
+
       const angle = (2 * Math.PI * index) / count - Math.PI / 2;
       const x = centerX + radius * Math.cos(angle);
       const y = centerY + radius * Math.sin(angle);
@@ -831,7 +813,7 @@
       const seat = document.createElement("div");
       seat.className = "seat";
       seat.style.left = x + "px";
-      seat.style.top = y + "px";
+      seat.style.top  = y + "px";
 
       const seatCard = document.createElement("div");
       seatCard.className = "seat-card";
@@ -839,7 +821,7 @@
       const avatarSpan = document.createElement("div");
       avatarSpan.className = "seat-avatar";
       const avatarImg = document.createElement("img");
-      avatarImg.src = getMyAvatarUrl();
+      avatarImg.src = avatar;
       avatarImg.alt = "Avatar";
       avatarSpan.appendChild(avatarImg);
 
@@ -850,7 +832,7 @@
       const valueSpan = document.createElement("div");
       valueSpan.className = "seat-value";
       if (!currentState.revealed) {
-        valueSpan.textContent = "Hidden";
+        valueSpan.textContent = value ? "Voted" : "–";
         valueSpan.classList.add("hidden");
       } else {
         valueSpan.textContent = value || "–";
@@ -874,19 +856,22 @@
       return;
     }
 
-    entries.forEach(([name, value]) => {
+    entries.forEach(([name, info]) => {
+      const value  = typeof info === "object" ? info.value  : info;
+      const avatar = typeof info === "object" ? info.avatar : getMyAvatarUrl();
+
       const tile = document.createElement("div");
       tile.className = "participant-tile";
 
       const left = document.createElement("div");
       left.className = "participant-left";
 
-      const avatar = document.createElement("div");
-      avatar.className = "participant-avatar";
+      const avatarDiv = document.createElement("div");
+      avatarDiv.className = "participant-avatar";
       const avatarImg = document.createElement("img");
-      avatarImg.src = getMyAvatarUrl();
+      avatarImg.src = avatar;
       avatarImg.alt = "Avatar";
-      avatar.appendChild(avatarImg);
+      avatarDiv.appendChild(avatarImg);
 
       const nameSpan = document.createElement("span");
       nameSpan.className = "participant-name";
@@ -894,15 +879,15 @@
 
       const valSpan = document.createElement("span");
       valSpan.className = "participant-val";
-
       if (!currentState.revealed) {
-        valSpan.textContent = "Hidden";
-        valSpan.style.color = "#aaa";
+        valSpan.textContent = value ? "Voted ✓" : "Waiting…";
+        valSpan.style.color = value ? "#2a7a2a" : "#aaa";
       } else {
         valSpan.textContent = value || "–";
+        valSpan.style.color = "#333";
       }
 
-      left.appendChild(avatar);
+      left.appendChild(avatarDiv);
       left.appendChild(nameSpan);
       tile.appendChild(left);
       tile.appendChild(valSpan);
@@ -910,38 +895,45 @@
     });
   }
 
+  // ─── Status & summary ──────────────────────────────────────────────────────
+
   function updateStatusAndSummary() {
     const entries = Object.entries(currentState.votes || {});
     const totalVotes = entries.length;
+    const votedCount = entries.filter(([, info]) => {
+      const v = typeof info === "object" ? info.value : info;
+      return v !== null && v !== undefined && v !== "";
+    }).length;
 
     if (!currentState.revealed) {
       statusText.textContent = totalVotes
-        ? `Votes placed: ${totalVotes}. Click "Reveal" when everyone has voted.`
+        ? `${votedCount} of ${totalVotes} voted. Click "Reveal" when everyone's done.`
         : "No votes yet. Pick a card to vote.";
       summaryText.textContent = "";
       if (tableAverage) tableAverage.textContent = "";
     } else {
-      statusText.textContent = `Revealed. Total votes: ${totalVotes}.`;
+      statusText.textContent = `Revealed. ${totalVotes} participant(s).`;
       const numericVotes = entries
-        .map(([, v]) => parseFloat(v))
+        .map(([, info]) => {
+          const v = typeof info === "object" ? info.value : info;
+          return parseFloat(v);
+        })
         .filter((n) => !Number.isNaN(n));
 
       if (numericVotes.length) {
         const min = Math.min(...numericVotes);
         const max = Math.max(...numericVotes);
         const avg = numericVotes.reduce((a, b) => a + b, 0) / numericVotes.length;
-        const avgText = avg.toFixed(2);
-
-        summaryText.textContent =
-          `Min: ${min} | Max: ${max} | Avg: ${avgText} (numeric votes only)`;
-
-        if (tableAverage) tableAverage.textContent = avgText;
+        summaryText.textContent = `Min: ${min} | Max: ${max} | Avg: ${avg.toFixed(2)} (numeric only)`;
+        if (tableAverage) tableAverage.textContent = avg.toFixed(2);
       } else {
-        summaryText.textContent = "No numeric votes to summarize.";
+        summaryText.textContent = "No numeric votes to summarise.";
         if (tableAverage) tableAverage.textContent = "";
       }
     }
   }
+
+  // ─── Render all ───────────────────────────────────────────────────────────
 
   function renderAll() {
     highlightSelectedCard();
@@ -950,12 +942,12 @@
     updateStatusAndSummary();
   }
 
+  // ─── Actions ──────────────────────────────────────────────────────────────
+
   function handleVote(value) {
     myCurrentVote = value;
     highlightSelectedCard();
-    const name = nameInput.value.trim() || "Anonymous";
     if (!socket) return;
-    socket.emit("updateName", name);
     socket.emit("vote", value);
   }
 
@@ -964,12 +956,22 @@
     socket.emit("reveal");
   }
 
+  // FIX: handleReset was previously undefined
+  function handleReset() {
+    myCurrentVote = null;
+    highlightSelectedCard();
+    if (!socket) return;
+    socket.emit("reset");
+  }
+
+  // ─── Socket ───────────────────────────────────────────────────────────────
+
   function connectSocket() {
     socket = io();
-    statusText.textContent = "Connecting to server...";
+    statusText.textContent = "Connecting to server…";
 
     socket.on("connect", () => {
-      statusText.textContent = "Connected. Fill your name and avatar to start.";
+      statusText.textContent = "Connected. Enter your name and avatar to start.";
     });
 
     socket.on("disconnect", () => {
@@ -978,9 +980,23 @@
 
     socket.on("stateUpdate", (state) => {
       currentState = state || { revealed: false, votes: {} };
+      // If server reset votes, also clear local vote highlight
+      const myName = nameInput.value.trim() || "Anonymous";
+      const myEntry = currentState.votes[myName];
+      const myVal = myEntry ? (typeof myEntry === "object" ? myEntry.value : myEntry) : null;
+      if (!myVal) myCurrentVote = null;
       renderAll();
     });
+
+    // FIX: backlog is now synced from server
+    socket.on("backlogUpdate", ({ items: newItems, currentIndex: newIndex }) => {
+      items = newItems || [];
+      currentItemIndex = typeof newIndex === "number" ? newIndex : -1;
+      updateBacklogTiles();
+    });
   }
+
+  // ─── Dialog ───────────────────────────────────────────────────────────────
 
   function confirmDialog() {
     const rawName = dialogNameInput.value.trim();
@@ -989,12 +1005,18 @@
     nameInput.value = finalName;
 
     if (socket) {
-      socket.emit("joinRoom", { roomId: ROOM_ID, name: finalName });
-      socket.emit("updateName", finalName);
+      // FIX: send avatar along with joinRoom
+      socket.emit("joinRoom", {
+        roomId: ROOM_ID,
+        name: finalName,
+        avatar: getMyAvatarUrl(),
+      });
+      // FIX: updateName now also carries avatar
+      socket.emit("updateName", { name: finalName, avatar: getMyAvatarUrl() });
     }
 
     overlay.classList.add("hidden");
-    statusText.textContent = "Enter your estimate by clicking a card.";
+    statusText.textContent = "Pick a card to cast your vote.";
   }
 
   function buildAvatarGrid() {
@@ -1010,21 +1032,19 @@
       wrapper.addEventListener("click", () => {
         myAvatarIndex = index;
         document.querySelectorAll(".avatar-option").forEach((opt, i) => {
-          if (i === myAvatarIndex) opt.classList.add("selected");
-          else opt.classList.remove("selected");
+          opt.classList.toggle("selected", i === myAvatarIndex);
         });
       });
       avatarGrid.appendChild(wrapper);
     });
   }
 
+  // ─── Event listeners ──────────────────────────────────────────────────────
+
   dialogConfirmBtn.addEventListener("click", confirmDialog);
 
   dialogNameInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      confirmDialog();
-    }
+    if (e.key === "Enter") { e.preventDefault(); confirmDialog(); }
   });
 
   window.addEventListener("keydown", (e) => {
@@ -1039,13 +1059,15 @@
     dialogNameInput.focus();
   });
 
+  revealBtn.addEventListener("click", handleReveal);
+  resetBtn.addEventListener("click", handleReset);
+
+  // ─── Init ─────────────────────────────────────────────────────────────────
+
   renderCards();
   renderAll();
   updateBacklogTiles();
   connectSocket();
-
-  revealBtn.addEventListener("click", handleReveal);
-  resetBtn.addEventListener("click", handleReset);
 </script>
 </body>
 </html>
