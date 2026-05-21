@@ -1,7 +1,11 @@
 // server.js
+// Planning Poker server with per-room state persisted to disk (rooms.json)
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
@@ -11,13 +15,47 @@ const io = new Server(server, {
 
 app.use(express.static("public"));
 
+// ---- Persistence ------------------------------------------------------------
+
+const ROOMS_FILE = path.join(__dirname, "rooms.json");
+
+// Load rooms from disk if file exists
+function loadRoomsFromDisk() {
+  try {
+    if (fs.existsSync(ROOMS_FILE)) {
+      const raw = fs.readFileSync(ROOMS_FILE, "utf8");
+      const data = JSON.parse(raw);
+      if (data && typeof data === "object") {
+        console.log("Loaded rooms from disk.");
+        return data;
+      }
+    }
+  } catch (err) {
+    console.error("Error loading rooms from disk:", err);
+  }
+  return {}; // default empty
+}
+
+// Save rooms to disk
+function saveRoomsToDisk() {
+  try {
+    fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 2), "utf8");
+  } catch (err) {
+    console.error("Error saving rooms to disk:", err);
+  }
+}
+
+// ---- Room state -------------------------------------------------------------
+
 // Room state shape:
 // {
 //   revealed: bool,
 //   votes: { name: { value: string, avatar: string } },
 //   backlog: { items: string[], currentIndex: number }
 // }
-const rooms = {};
+
+// In-memory rooms object, initialised from disk
+const rooms = loadRoomsFromDisk();
 
 function getRoom(roomId) {
   if (!rooms[roomId]) {
@@ -29,6 +67,8 @@ function getRoom(roomId) {
   }
   return rooms[roomId];
 }
+
+// ---- Socket.IO handlers -----------------------------------------------------
 
 io.on("connection", (socket) => {
   let currentRoom = null;
@@ -44,8 +84,11 @@ io.on("connection", (socket) => {
 
     socket.join(currentRoom);
 
-    // Send full current state to the joining client
-    socket.emit("stateUpdate", getRoom(currentRoom));
+    // Ensure room exists and send full current state to the joining client
+    const room = getRoom(currentRoom);
+    socket.emit("stateUpdate", room);
+    // also send backlog explicitly (client listens to backlogUpdate)
+    socket.emit("backlogUpdate", room.backlog);
   });
 
   socket.on("updateName", ({ name, avatar }) => {
@@ -57,6 +100,7 @@ io.on("connection", (socket) => {
     if (!currentRoom) return;
     const room = getRoom(currentRoom);
     room.votes[currentName] = { value, avatar: currentAvatar };
+    saveRoomsToDisk(); // persist state
     io.to(currentRoom).emit("stateUpdate", room);
   });
 
@@ -64,6 +108,7 @@ io.on("connection", (socket) => {
     if (!currentRoom) return;
     const room = getRoom(currentRoom);
     room.revealed = true;
+    saveRoomsToDisk();
     io.to(currentRoom).emit("stateUpdate", room);
   });
 
@@ -72,6 +117,7 @@ io.on("connection", (socket) => {
     const room = getRoom(currentRoom);
     room.revealed = false;
     room.votes = {};
+    saveRoomsToDisk();
     io.to(currentRoom).emit("stateUpdate", room);
   });
 
@@ -83,6 +129,7 @@ io.on("connection", (socket) => {
       items: Array.isArray(items) ? items : [],
       currentIndex: typeof currentIndex === "number" ? currentIndex : -1,
     };
+    saveRoomsToDisk();
     io.to(currentRoom).emit("backlogUpdate", room.backlog);
   });
 
@@ -94,6 +141,7 @@ io.on("connection", (socket) => {
     // Also reset votes when navigating to a new item
     room.revealed = false;
     room.votes = {};
+    saveRoomsToDisk();
     io.to(currentRoom).emit("stateUpdate", room);
     io.to(currentRoom).emit("backlogUpdate", room.backlog);
   });
@@ -103,6 +151,7 @@ io.on("connection", (socket) => {
     const room = rooms[currentRoom];
     if (!room) return;
     delete room.votes[currentName];
+    saveRoomsToDisk();
     io.to(currentRoom).emit("stateUpdate", room);
   });
 });
