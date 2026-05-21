@@ -1,366 +1,282 @@
-AI Handover – Planning Poker Web App
-1. Goal
-Recreate a real‑time Planning Poker web app for agile estimation with:
+1. Purpose
+A lightweight, real‑time Planning Poker web app for agile estimation:
 
-A visual table in the center, participants arranged around it as seats.
-Participants list on the left as tiles.
-Backlog on the right (list of items to estimate).
-Cards at the bottom, Reveal/Reset buttons under the table.
-Name + avatar selection dialog on first load.
-Real-time sync between users using Socket.IO.
-Deployed on a Node‑friendly host (e.g., Render) as a single Node.js web service.
-No external integrations (Azure DevOps, Vercel serverless) are needed in the final version. The last agreed scope is:
+Supports multiple teams running sessions in parallel via rooms.
+Each room has:
+Name + avatar selection per participant.
+A central “table” with participants arranged around it.
+A shared backlog (list of items) and current item.
+Individual votes (cards) per participant, with Reveal/Reset.
+All updates are synchronized in real time across all clients in the same room.
+It’s designed to be easy to run on a single Node process (e.g., developer machine or a small internal server).
 
-Simple Express + Socket.IO server.
-Static HTML/JS/CSS front-end.
-Backlog items are entered manually into the UI (paste from ADO or elsewhere).
-Multi‑user real-time behavior via WebSockets.
-Important: There were multiple iterations experimenting with Azure DevOps integration and Vercel; the final implementation removes that complexity and returns to a clean Node/Socket.IO + static front-end design.
+2. High‑Level Architecture
+Backend: Node.js + Express + Socket.IO
 
-2. Final Architecture
-2.1 High-level components
-Node.js server (server.js)
+Single process, long‑running HTTP + WebSocket server.
+Serves static assets and manages per‑room state.
+Persists room state to a JSON file on disk (rooms.json) so rooms and backlog survive restarts.
+Frontend: Single-page HTML/JS/CSS
 
-Uses Express to serve static assets from public/.
-Uses Socket.IO on the same HTTP server for real-time signaling.
-Maintains in‑memory room state:
-Per room: revealed flag + votes map.
-Client UI (public/index.html + CSS + embedded JS)
+No framework; pure DOM manipulation.
+Socket.IO client for real‑time events.
+Uses URL hash (/#room-XXXXXX) as room ID.
+Minimal Bootstrap (CSS) just for buttons/dialogs.
+All logic is self-contained in two files:
 
-Pure HTML/JS/CSS (no frameworks).
-Socket.IO client connects back to the server.
-Layout:
-Top: “Your name” (read-only display), room name, status line.
-Left: Participants as tiles.
-Center: Round table + Reveal/Reset + summary.
-Right: Backlog items & controls.
-Bottom: Planning poker cards.
-First-run dialog for:
-User name.
-Avatar choice (6 available avatars).
-Static assets
+server.js
+public/index.html
+3. Data Model
+3.1 Rooms (on the server)
+Each room is keyed by roomId (the hash string). Shape:
 
-/public/avatars/avatar1.jpg … /avatar6.jpg (or PNG).
-2.2 No external APIs
-No Azure DevOps integration in this final version.
-No PATs or environment variables required.
-No database; everything is in memory.
-3. Folder Structure
-The final, desired structure:
-
-text
+ts
 
 Copy code
-planning-poker/
-  server.js
-  package.json
-  package-lock.json     # optional but typical
-  .gitignore            # ignore node_modules etc.
-  public/
-    index.html
-    avatars/
-      avatar1.jpg
-      avatar2.jpg
-      avatar3.jpg
-      avatar4.jpg
-      avatar5.jpg
-      avatar6.jpg
+type VoteInfo = {
+  value: string;    // e.g., "5", "13", "?"
+  avatar: string;   // URL path to avatar image
+};
 
-.gitignore should at least contain:
+type BacklogState = {
+  items: string[];      // raw item strings (e.g., "US-123 - Login page")
+  currentIndex: number; // index into items, -1 if none
+};
 
-gitignore
+type RoomState = {
+  revealed: boolean;                    // votes revealed or not
+  votes: Record<string, VoteInfo>;      // name → { value, avatar }
+  backlog: BacklogState;
+};
 
-Copy code
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.DS_Store
-Thumbs.db
-.env
+type Rooms = Record<string, RoomState>;
 
-4. Server Implementation (server.js)
-The final server.js should:
+This rooms object is loaded from disk at startup and saved on any mutation to rooms.json.
 
-Create an Express app.
-Serve static files from public.
-Create an HTTP server and attach Socket.IO.
-Maintain rooms in memory.
-Listen on process.env.PORT || 3000.
-4.1 Target server.js content
+4. Backend: server.js
+4.1 Technologies
+express to serve static files from /public.
+http + socket.io for WebSocket communication.
+fs/path for JSON file persistence.
+4.2 Core responsibilities
+Static file serving
+
 js
 
 Copy code
-// server.js
-// Simple Planning Poker server without external integrations
-
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" },
-});
-
-// Serve static files
 app.use(express.static("public"));
 
-// In-memory room state: { roomId: { revealed: bool, votes: { name: value } } }
-const rooms = {};
+Room state management
 
-function getRoom(roomId) {
-  if (!rooms[roomId]) {
-    rooms[roomId] = { revealed: false, votes: {} };
-  }
-  return rooms[roomId];
-}
+loadRoomsFromDisk(): reads rooms.json if present, else returns {}.
+saveRoomsToDisk(): writes current rooms to rooms.json (sync I/O).
+getRoom(roomId): ensures a RoomState for a given roomId.
+Socket.IO events
 
-io.on("connection", (socket) => {
-  let currentRoom = null;
-  let currentName = null;
+Within io.on("connection", socket => { … }), per connection we track:
 
-  socket.on("joinRoom", ({ roomId, name }) => {
-    if (currentRoom) socket.leave(currentRoom);
+js
 
-    currentRoom = roomId || "default-room";
-    currentName = name || "Anonymous";
+Copy code
+let currentRoom = null;
+let currentName = null;
+let currentAvatar = "/avatars/avatar1.jpg";
 
-    socket.join(currentRoom);
-    socket.emit("stateUpdate", getRoom(currentRoom));
-  });
+Handlers:
 
-  socket.on("updateName", (name) => {
-    currentName = name || "Anonymous";
-  });
+joinRoom({ roomId, name, avatar })
 
-  socket.on("vote", (value) => {
-    if (!currentRoom) return;
-    const room = getRoom(currentRoom);
-    room.votes[currentName || "Anonymous"] = value;
-    io.to(currentRoom).emit("stateUpdate", room);
-  });
+Leaves previous room if any.
+Sets currentRoom, currentName, currentAvatar.
+Joins Socket.IO room.
+Sends stateUpdate with full RoomState.
+Sends backlogUpdate with room.backlog.
+updateName({ name, avatar })
 
-  socket.on("reveal", () => {
-    if (!currentRoom) return;
-    const room = getRoom(currentRoom);
-    room.revealed = true;
-    io.to(currentRoom).emit("stateUpdate", room);
-  });
+Updates currentName / currentAvatar on the server.
+vote(value)
 
-  socket.on("reset", () => {
-    if (!currentRoom) return;
-    rooms[currentRoom] = { revealed: false, votes: {} };
-    io.to(currentRoom).emit("stateUpdate", rooms[currentRoom]);
-  });
+Sets room.votes[currentName] = { value, avatar: currentAvatar }.
+saveRoomsToDisk().
+Emits stateUpdate to the room.
+reveal()
 
-  socket.on("disconnect", () => {
-    // No further cleanup done in current implementation
-  });
-});
+Sets room.revealed = true.
+saveRoomsToDisk().
+Emits stateUpdate.
+reset()
 
+Sets room.revealed = false, clears room.votes.
+saveRoomsToDisk().
+Emits stateUpdate.
+setBacklog({ items, currentIndex })
+
+Sets room.backlog.items and currentIndex.
+saveRoomsToDisk().
+Emits backlogUpdate to the room.
+setBacklogIndex(index)
+
+Validates index.
+Sets room.backlog.currentIndex.
+Clears votes and revealed (new item means new round).
+saveRoomsToDisk().
+Emits stateUpdate and backlogUpdate.
+disconnect
+
+Removes currentName from room.votes if present.
+saveRoomsToDisk().
+Emits updated stateUpdate.
+Listening
+
+js
+
+Copy code
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Planning Poker running at http://localhost:${PORT}`);
 });
 
-5. Front-end Implementation (public/index.html)
-5.1 Requirements & behavior
-The front‑end should:
+5. Frontend: public/index.html
+A single file with:
 
-On load:
+All layout and styling in <style>.
+All logic in a <script> at the bottom.
+5.1 Room selection (lobby)
+On first load at / (no hash): user sees a “Select a Room” overlay.
+Buttons:
+Create New Room:
+Generates a random room ID like room-AB12CD.
+Sets window.location.hash = "#room-AB12CD" and reloads.
+Join Room:
+Accepts a full URL (https://…#room-AB12CD) or just the code (room-AB12CD).
+Sets hash & reloads.
+After reload, ROOM_ID is derived from the hash and the app:
 
-Show an overlay dialog asking:
-Name (required, fallback “Anonymous”).
-Avatar choice (from 6 images).
-When the user presses Enter/Continue:
-Hide the dialog.
-Set nameInput at top.
-Emit joinRoom with room ID derived from window.location.hash.
-Emit updateName.
-Maintain local state:
+Hides lobby overlay.
+Shows the name+avatar dialog.
+5.2 Name + avatar dialog
+Prompts the user for:
+Name (free text).
+Avatar (one of 6 local image files under /public/avatars).
+On Continue:
 
-items: array of backlog item strings (entered manually).
-currentItemIndex: index of current item.
-Backlog:
+Sets read-only name at the top.
 
-Textarea itemsInput for “Items (one per line)”.
-Button Add Items:
-Splits by newline, trims, filters empties.
-Stores into items.
-Sets currentItemIndex = 0 if not empty.
-Renders backlog tiles.
-Previous and Next buttons:
-Change currentItemIndex and call handleReset() to clear votes.
-Backlog tiles:
-Show “Item X of N”.
-Click to select that item (and reset votes).
-Participants:
+Emits:
 
-Derived from currentState.votes coming from server.
+js
+
+Copy code
+socket.emit("joinRoom", {
+  roomId: ROOM_ID,
+  name: finalName,
+  avatar: getMyAvatarUrl(),
+});
+socket.emit("updateName", { name: finalName, avatar: getMyAvatarUrl() });
+
+Hides the dialog; user can now vote.
+
+5.3 Backlog panel
+Right side of the layout:
+
+textarea#itemsInput for “Items (one per line)”.
+Add Items button:
+Splits textarea into lines → items[].
+Emits setBacklog({ items, currentIndex: 0 }).
+A list of backlog tiles (backlog-list):
 Each tile shows:
-Avatar image (from chosen avatar).
+Title (the line text).
+“Item X of N”.
+Clicking a tile calls setBacklogIndex(index) on the server.
+Previous/Next buttons:
+Also call setBacklogIndex(currentIndex ± 1).
+Backlog state is driven by the server’s backlogUpdate and stateUpdate events; the client keeps a local mirror items and currentItemIndex.
+
+5.4 Participants & seats
+Left panel: participants as tiles, showing:
+
+Avatar image.
 Name.
-“Hidden” (grey) or actual value after Reveal.
-Table:
+Status (“Voted ✓” vs “Waiting…” before Reveal; actual value after Reveal).
+Center panel: a circular “table” with seats around it:
 
-Seats arranged in a circle around the center:
-centerX = 210, centerY = 210, radius ~ 190.
-Angle computed as 2π * index / count - π/2, so first starts at the top.
-Each seat has avatar, name, and Hidden/value.
-Cards:
+For each entry in currentState.votes (name → { value, avatar }):
+Compute angle around circle.
+Draw a “seat card” with:
+Avatar.
+Name.
+Value:
+If not revealed: shows “Voted” or “–” and greys it out.
+If revealed: shows actual value.
+5.5 Cards & voting
+Bottom row: clickable .vote-card elements from FIB_CARDS.
+On click:
 
-Bottom row values:
+Locally mark card as selected (myCurrentVote).
+Emit vote(value).
+The server updates room.votes and broadcasts stateUpdate, which updates participants and seats.
 
-js
+5.6 Reveal & Reset
+Reveal button:
+Calls socket.emit("reveal").
+Server marks revealed = true, broadcasts stateUpdate.
+Reset button:
+Calls socket.emit("reset").
+Server clears votes and sets revealed = false, broadcasts stateUpdate.
+5.7 Summary
+Under the table:
 
-Copy code
-const FIB_CARDS = ["0", "0.5", "1", "2", "3", "5", "8", "13", "20", "40", "100", "?"];
+updateStatusAndSummary() calculates:
+Before Reveal: how many have voted (votedCount) vs totalVotes.
+After Reveal: min/max/avg of numeric votes.
+Non-numeric values (like “?”) are ignored for stats.
+Shows avg in the center of the table as tableAverage.
+5.8 Copy link button
+In the header:
 
-Clicking a card:
-
-Locally mark it as selected.
-Emit vote with that value.
-Reveal/Reset:
-
-Reveal emits reveal (no client‑side computation needed; server marks state).
-Reset emits reset.
-Summary:
-
-After Reveal, compute from currentState.votes:
-Numeric min/max.
-Numeric average, fixed to 2 decimals.
-Only numeric votes included (non‑numeric like “?” ignored).
-5.2 Avatar handling
-Global AVATAR_FILES:
-
-js
-
-Copy code
-const AVATAR_FILES = [
-  "/avatars/avatar1.jpg",
-  "/avatars/avatar2.jpg",
-  "/avatars/avatar3.jpg",
-  "/avatars/avatar4.jpg",
-  "/avatars/avatar5.jpg",
-  "/avatars/avatar6.jpg"
-];
-
-myAvatarIndex is initially 0; set via avatar grid in dialog.
-
-getMyAvatarUrl() returns AVATAR_FILES[myAvatarIndex].
-
-Current simple implementation uses the same avatar for all seats/tiles; improving this to true per‑user avatar mapping would require sending an avatar identifier with each joinRoom and storing it server‑side.
-
-6. package.json
-The package.json should be minimal and support npm start:
-
-json
-
-Copy code
-{
-  "name": "planning-poker",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "socket.io": "^4.7.2"
-  }
-}
-
-7. Running Locally (for verification)
-Steps for the AI to simulate / verify
-Install dependencies:
+Shows current room label (Room: room-AB12CD).
+Copy link button:
+If ROOM_ID is set:
+Uses navigator.clipboard.writeText(window.location.href).
+Shows status “Room link copied to clipboard.”
+If no room: shows “No room selected yet to copy.”
+6. How to Run (Developer Machine)
+From the project directory:
 
 bash
 
 Copy code
-npm install
+npm install          # once
+node server.js       # starts the app
 
-Start server:
-
-bash
-
-Copy code
-npm start
-
-In a browser (or headless test environment), load:
+Then in a browser:
 
 text
 
 Copy code
-http://localhost:3000/#team1
+http://localhost:3000/
 
-Confirm:
+Flow:
 
-Welcome dialog appears.
-Name/avatars can be selected.
-Backlog can load items from textarea.
-Cards can be clicked, Reveal/Reset works.
-Simulate multiple clients:
+Lobby: create/join room → URL becomes /#room-....
+Name+avatar dialog.
+Add backlog items; navigate.
+Team votes; Reveal; Reset.
+Copy room link if needed.
+Rooms/backlog survive restarts via rooms.json in the project folder.
 
-Open multiple browser tabs or simulate multiple connections to Socket.IO endpoint /socket.io.
-Confirm that:
-vote events propagate.
-reveal and reset propagate.
-8. Deployment to a Node-friendly Host (Render)
-Target behavior for deployment
-The AI should ensure the project can be deployed as a single Node web service (no serverless splitting):
+7. Notes for Extension
+A staff dev could easily extend this with:
 
-Build: npm install
-Start: npm start
-Host listens on process.env.PORT or 3000.
-Generic steps (Render example)
-Push this repo to GitHub.
-On Render:
-New → Web Service → attach GitHub repo.
-Build command: npm install.
-Start command: npm start.
-Render sets PORT env var; app picks it up.
-URL from Render: https://<app-name>.onrender.com/#team1.
-Important constraint: Because state is in memory on a single process, you should:
+Room metadata (createdAt, friendly name, lastActivity).
+Room pruning (remove stale rooms from rooms.json).
+Per‑user avatars stored server-side instead of inferred per client.
+Security:
+Room passwords.
+IP allowlists or reverse-proxy auth.
+Export:
+Endpoint to download votes/backlog as CSV/JSON per room.
+The current codebase is small and intentionally simple; changes are localized primarily to:
 
-Run only one instance of the service (no horizontal scaling).
-Understand that a redeploy resets all active sessions.
-9. Out-of-Scope / Removed Functionality
-The following were explored during development but are not part of the final implementation:
-
-Azure DevOps integration
-
-Earlier we added:
-/api/backlog to pull work items via WIQL.
-/api/backlogByIds to fetch stories by ID.
-PAT handling via ADO_PAT env variable.
-This has been removed in the final version to keep the app simple and portable.
-If re-introduced, must be done with:
-Secure env variables.
-Proper filtering by WorkItemType and AreaPath.
-Vercel deployment
-
-Tried to deploy the Node/Socket.IO server to Vercel.
-Hit Cannot GET / and serverless/WebSocket limitations.
-Final decision: use a Node‑friendly host (Render/Railway/Fly/Heroku) instead.
-10. Known Limitations
-In‑memory state only:
-Restarting the server wipes all votes and backlog items.
-Per‑client avatars not persisted server‑side:
-All seats/tiles currently use the same avatar as the local user; upgrading to per‑user avatars requires extending server state.
-No authentication / access control:
-Anyone with the URL can join a room and vote.
-If hosted publicly, consider adding a simple password or SSO in front.
-11. Summary of Key Decisions for Re-Creation
-Architecture: Single Node.js/Express + Socket.IO server; static front-end in public/.
-UI layout: Participants left, table center, backlog right, cards bottom.
-Behavior: Manual backlog entry; real-time card selection; reveal+reset; simple summary.
-No ADO integration / no Vercel in the final implementation to keep it simple and portable.
-Deployment target: Any Node-friendly host that can run node server.js and support WebSockets.
-An AI agent recreating this project should:
-
-Rebuild server.js exactly as above.
-Rebuild public/index.html with the described layout and behavior.
-Ensure the Socket.IO event names and structures (joinRoom, updateName, vote, reveal, reset, stateUpdate) match exactly so multi-user real-time behavior works.
-Package with package.json and static assets under public/, then run with npm start and verify via browser.
+server.js: room state and events.
+The <script> inside public/index.html: front-end state and UI wiring.
