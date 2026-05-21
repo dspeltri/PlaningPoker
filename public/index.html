@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Planning Poker</title>
 
+  <!-- Bootstrap 4 CSS (for dialog buttons only) -->
   <link
     rel="stylesheet"
     href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
@@ -545,7 +546,12 @@
 <body>
 <header>
   <h1>Planning Poker</h1>
-  <span id="roomLabel"></span>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <span id="roomLabel"></span>
+    <button id="copyRoomLinkBtn" class="btn btn-light btn-sm" type="button">
+      Copy link
+    </button>
+  </div>
 </header>
 <main>
   <div class="top-row">
@@ -559,9 +565,9 @@
       </div>
     </div>
     <div class="field-group">
-      <label>Room (from URL hash)</label>
+      <label>Room</label>
       <div class="room-name" id="roomNameDisplay"></div>
-      <div style="font-size: 11px; color: #777;">Use URL like <code>#team1</code> to select a room.</div>
+	<!-- <div style="font-size: 11px; color: #777;">Use URL like <code>#team1</code> or create one below.</div>  -->
     </div>
   </div>
 
@@ -618,8 +624,32 @@
   </div>
 </main>
 
+<!-- Room selection (lobby) overlay -->
+<div id="roomOverlay" class="overlay hidden">
+  <div class="dialog">
+    <h2>Select a Room</h2>
+    <p>Create a new room (unique URL) or join an existing one.</p>
+
+    <div class="dialog-row">
+      <button id="createRoomBtn" class="btn btn-primary btn-sm" type="button">
+        Create New Room
+      </button>
+    </div>
+
+    <hr />
+
+    <div class="dialog-row">
+      <label for="joinRoomInput">Join existing room (paste URL or room code)</label>
+      <input id="joinRoomInput" type="text" placeholder="e.g. https://app/#room-ABCD12 or room-ABCD12" />
+    </div>
+    <div class="dialog-footer">
+      <button id="joinRoomBtn" class="btn btn-secondary btn-sm" type="button">Join Room</button>
+    </div>
+  </div>
+</div>
+
 <!-- Initial Name + Avatar dialog -->
-<div id="nameAvatarOverlay" class="overlay">
+<div id="nameAvatarOverlay" class="overlay hidden">
   <div class="dialog">
     <h2>Welcome</h2>
     <p>Enter your name, choose an avatar, then press Enter to start voting.</p>
@@ -649,15 +679,27 @@
     "/avatars/avatar6.jpg"
   ];
 
-  function getRoomId() {
+  // ─── Room helpers ─────────────────────────────────────────────────────────
+  function getRoomIdFromHash() {
     const hash = window.location.hash.replace("#", "").trim();
-    return hash || "default-room";
+    return hash || null;
   }
 
-  const ROOM_ID = getRoomId();
+  function generateRoomId() {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let id = "room-";
+    for (let i = 0; i < 6; i++) {
+      id += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return id;
+  }
 
+  let ROOM_ID = getRoomIdFromHash();
+
+  // ─── DOM references ───────────────────────────────────────────────────────
   const roomLabel = document.getElementById("roomLabel");
   const roomNameDisplay = document.getElementById("roomNameDisplay");
+  const copyRoomLinkBtn = document.getElementById("copyRoomLinkBtn");
   const nameInput = document.getElementById("nameInput");
   const cardsContainer = document.getElementById("cardsContainer");
   const statusText = document.getElementById("statusText");
@@ -666,28 +708,32 @@
   const resetBtn = document.getElementById("resetBtn");
   const seatsLayer = document.getElementById("seatsLayer");
   const tableAverage = document.getElementById("tableAverage");
+
   const participantsList = document.getElementById("participantsList");
+
   const itemsInput = document.getElementById("itemsInput");
   const loadItemsBtn = document.getElementById("loadItemsBtn");
   const prevItemBtn = document.getElementById("prevItemBtn");
   const nextItemBtn = document.getElementById("nextItemBtn");
   const backlogList = document.getElementById("backlogList");
   const itemIndexLabel = document.getElementById("itemIndexLabel");
-  const overlay = document.getElementById("nameAvatarOverlay");
+
+  const roomOverlay = document.getElementById("roomOverlay");
+  const createRoomBtn = document.getElementById("createRoomBtn");
+  const joinRoomInput = document.getElementById("joinRoomInput");
+  const joinRoomBtn = document.getElementById("joinRoomBtn");
+
+  const nameOverlay = document.getElementById("nameAvatarOverlay");
   const dialogNameInput = document.getElementById("dialogNameInput");
   const avatarGrid = document.getElementById("avatarGrid");
   const dialogConfirmBtn = document.getElementById("dialogConfirmBtn");
 
-  roomLabel.textContent = "Room: " + ROOM_ID;
-  roomNameDisplay.textContent = ROOM_ID;
-
+  // ─── App state ────────────────────────────────────────────────────────────
   let socket = null;
-  // votes shape: { name: { value, avatar } }
-  let currentState = { revealed: false, votes: {} };
+  let currentState = { revealed: false, votes: {}, backlog: { items: [], currentIndex: -1 } };
   let myCurrentVote = null;
   let myAvatarIndex = 0;
 
-  // Backlog is now server-synced; local copy mirrors server state
   let items = [];
   let currentItemIndex = -1;
 
@@ -695,8 +741,35 @@
     return AVATAR_FILES[myAvatarIndex] || AVATAR_FILES[0];
   }
 
-  // ─── Backlog ───────────────────────────────────────────────────────────────
+  // ─── Lobby (room selection) ───────────────────────────────────────────────
+function gotoRoom(roomId) {
+  // Set hash and force a full reload so ROOM_ID is recomputed
+  window.location.hash = "#" + roomId;
+  window.location.reload();
+}
 
+  createRoomBtn.addEventListener("click", () => {
+    const newRoomId = generateRoomId();
+    gotoRoom(newRoomId);     // page reloads, new hash present
+  });
+
+  joinRoomBtn.addEventListener("click", () => {
+    const raw = (joinRoomInput.value || "").trim();
+    if (!raw) return;
+
+    let roomId = null;
+    if (raw.includes("#")) {
+      const parts = raw.split("#");
+      roomId = (parts[1] || "").trim();
+    } else {
+      roomId = raw;
+    }
+    if (!roomId) return;
+
+    gotoRoom(roomId);        // page reloads, new hash present
+  });
+
+  // ─── Backlog ──────────────────────────────────────────────────────────────
   function updateBacklogTiles() {
     backlogList.innerHTML = "";
     if (!items.length) {
@@ -741,7 +814,6 @@
       currentItemIndex >= 0 ? `Item ${currentItemIndex + 1} of ${items.length}` : "";
   }
 
-  // Navigate to an item — tells the server, which resets votes for everyone
   function goToItem(newIndex) {
     if (!items.length) return;
     if (newIndex < 0 || newIndex >= items.length) return;
@@ -767,8 +839,7 @@
   prevItemBtn.addEventListener("click", () => goToItem(currentItemIndex - 1));
   nextItemBtn.addEventListener("click", () => goToItem(currentItemIndex + 1));
 
-  // ─── Cards ─────────────────────────────────────────────────────────────────
-
+  // ─── Cards ────────────────────────────────────────────────────────────────
   function renderCards() {
     cardsContainer.innerHTML = "";
     FIB_CARDS.forEach((val) => {
@@ -787,8 +858,7 @@
     });
   }
 
-  // ─── Seats & participants ──────────────────────────────────────────────────
-
+  // ─── Seats & participants ─────────────────────────────────────────────────
   function renderSeats() {
     seatsLayer.innerHTML = "";
     const entries = Object.entries(currentState.votes || {});
@@ -802,7 +872,6 @@
     entries.sort((a, b) => a[0].localeCompare(b[0]));
 
     entries.forEach(([name, info], index) => {
-      // Support both old shape (string) and new shape ({ value, avatar })
       const value  = typeof info === "object" ? info.value  : info;
       const avatar = typeof info === "object" ? info.avatar : getMyAvatarUrl();
 
@@ -895,8 +964,7 @@
     });
   }
 
-  // ─── Status & summary ──────────────────────────────────────────────────────
-
+  // ─── Status & summary ─────────────────────────────────────────────────────
   function updateStatusAndSummary() {
     const entries = Object.entries(currentState.votes || {});
     const totalVotes = entries.length;
@@ -907,7 +975,7 @@
 
     if (!currentState.revealed) {
       statusText.textContent = totalVotes
-        ? `${votedCount} of ${totalVotes} voted. Click "Reveal" when everyone's done.`
+        ? `${votedCount} of ${totalVotes} voted. Click "Reveal" when everyone is done.`
         : "No votes yet. Pick a card to vote.";
       summaryText.textContent = "";
       if (tableAverage) tableAverage.textContent = "";
@@ -924,16 +992,17 @@
         const min = Math.min(...numericVotes);
         const max = Math.max(...numericVotes);
         const avg = numericVotes.reduce((a, b) => a + b, 0) / numericVotes.length;
-        summaryText.textContent = `Min: ${min} | Max: ${max} | Avg: ${avg.toFixed(2)} (numeric only)`;
-        if (tableAverage) tableAverage.textContent = avg.toFixed(2);
+        const avgText = avg.toFixed(2);
+
+        summaryText.textContent =
+          `Min: ${min} | Max: ${max} | Avg: ${avgText} (numeric only)`;
+        if (tableAverage) tableAverage.textContent = avgText;
       } else {
         summaryText.textContent = "No numeric votes to summarise.";
         if (tableAverage) tableAverage.textContent = "";
       }
     }
   }
-
-  // ─── Render all ───────────────────────────────────────────────────────────
 
   function renderAll() {
     highlightSelectedCard();
@@ -943,7 +1012,6 @@
   }
 
   // ─── Actions ──────────────────────────────────────────────────────────────
-
   function handleVote(value) {
     myCurrentVote = value;
     highlightSelectedCard();
@@ -956,7 +1024,6 @@
     socket.emit("reveal");
   }
 
-  // FIX: handleReset was previously undefined
   function handleReset() {
     myCurrentVote = null;
     highlightSelectedCard();
@@ -964,14 +1031,13 @@
     socket.emit("reset");
   }
 
-  // ─── Socket ───────────────────────────────────────────────────────────────
-
+  // ─── Socket connection ────────────────────────────────────────────────────
   function connectSocket() {
     socket = io();
     statusText.textContent = "Connecting to server…";
 
     socket.on("connect", () => {
-      statusText.textContent = "Connected. Enter your name and avatar to start.";
+      statusText.textContent = "Connected.";
     });
 
     socket.on("disconnect", () => {
@@ -979,8 +1045,15 @@
     });
 
     socket.on("stateUpdate", (state) => {
-      currentState = state || { revealed: false, votes: {} };
-      // If server reset votes, also clear local vote highlight
+      // state from server: { revealed, votes, backlog }
+      currentState = state || { revealed: false, votes: {}, backlog: { items: [], currentIndex: -1 } };
+      if (currentState.backlog) {
+        items = currentState.backlog.items || [];
+        currentItemIndex = typeof currentState.backlog.currentIndex === "number"
+          ? currentState.backlog.currentIndex
+          : -1;
+        updateBacklogTiles();
+      }
       const myName = nameInput.value.trim() || "Anonymous";
       const myEntry = currentState.votes[myName];
       const myVal = myEntry ? (typeof myEntry === "object" ? myEntry.value : myEntry) : null;
@@ -988,16 +1061,17 @@
       renderAll();
     });
 
-    // FIX: backlog is now synced from server
-    socket.on("backlogUpdate", ({ items: newItems, currentIndex: newIndex }) => {
-      items = newItems || [];
-      currentItemIndex = typeof newIndex === "number" ? newIndex : -1;
+    socket.on("backlogUpdate", (backlog) => {
+      backlog = backlog || { items: [], currentIndex: -1 };
+      items = backlog.items || [];
+      currentItemIndex = typeof backlog.currentIndex === "number"
+        ? backlog.currentIndex
+        : -1;
       updateBacklogTiles();
     });
   }
 
-  // ─── Dialog ───────────────────────────────────────────────────────────────
-
+  // ─── Name + Avatar dialog ─────────────────────────────────────────────────
   function confirmDialog() {
     const rawName = dialogNameInput.value.trim();
     const finalName = rawName || "Anonymous";
@@ -1005,17 +1079,15 @@
     nameInput.value = finalName;
 
     if (socket) {
-      // FIX: send avatar along with joinRoom
       socket.emit("joinRoom", {
         roomId: ROOM_ID,
         name: finalName,
         avatar: getMyAvatarUrl(),
       });
-      // FIX: updateName now also carries avatar
       socket.emit("updateName", { name: finalName, avatar: getMyAvatarUrl() });
     }
 
-    overlay.classList.add("hidden");
+    nameOverlay.classList.add("hidden");
     statusText.textContent = "Pick a card to cast your vote.";
   }
 
@@ -1039,35 +1111,69 @@
     });
   }
 
-  // ─── Event listeners ──────────────────────────────────────────────────────
-
   dialogConfirmBtn.addEventListener("click", confirmDialog);
 
   dialogNameInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); confirmDialog(); }
-  });
-
-  window.addEventListener("keydown", (e) => {
-    if (overlay && !overlay.classList.contains("hidden") && e.key === "Enter") {
+    if (e.key === "Enter") {
       e.preventDefault();
       confirmDialog();
     }
   });
 
-  window.addEventListener("load", () => {
-    buildAvatarGrid();
-    dialogNameInput.focus();
+  window.addEventListener("keydown", (e) => {
+    if (nameOverlay && !nameOverlay.classList.contains("hidden") && e.key === "Enter") {
+      e.preventDefault();
+      confirmDialog();
+    }
   });
 
-  revealBtn.addEventListener("click", handleReveal);
-  resetBtn.addEventListener("click", handleReset);
-
   // ─── Init ─────────────────────────────────────────────────────────────────
+window.addEventListener("load", () => {
+  // Always recompute ROOM_ID from the current URL hash on each load
+  ROOM_ID = getRoomIdFromHash();
 
+  buildAvatarGrid();
   renderCards();
   renderAll();
   updateBacklogTiles();
   connectSocket();
+
+  if (!ROOM_ID) {
+    // No room selected yet – show lobby, hide name dialog
+    roomOverlay.classList.remove("hidden");
+    nameOverlay.classList.add("hidden");
+    roomLabel.textContent = "Room: (none selected)";
+    roomNameDisplay.textContent = "(none)";
+  } else {
+    // Room already in URL – skip lobby, show name+avatar dialog
+    roomOverlay.classList.add("hidden");
+    nameOverlay.classList.remove("hidden");
+    dialogNameInput.focus();
+    roomLabel.textContent = "Room: " + ROOM_ID;
+    roomNameDisplay.textContent = ROOM_ID;
+  }
+
+  revealBtn.addEventListener("click", handleReveal);
+  resetBtn.addEventListener("click", handleReset);
+});
+
+
+  // ─── URL Copy ─────────────────────────────────────────────────────────────────
+  copyRoomLinkBtn.addEventListener("click", () => {
+  const url = window.location.href;
+  if (!ROOM_ID) {
+    statusText.textContent = "No room selected yet to copy.";
+    return;
+  }
+  navigator.clipboard.writeText(url).then(
+    () => {
+      statusText.textContent = "Room link copied to clipboard.";
+    },
+    () => {
+      statusText.textContent = "Could not copy link automatically. Copy from the address bar.";
+    }
+  );
+});
 </script>
 </body>
 </html>
