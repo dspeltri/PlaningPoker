@@ -1,34 +1,41 @@
 // server.js
+"use strict";
+
 const express = require("express");
-const http = require("http");
+const http    = require("http");
 const { Server } = require("socket.io");
 
-const app = express();
+const app    = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" },
-});
+const io     = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static("public"));
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const DEFAULT_ROOM = "default-room";
-const DEFAULT_AVATAR = "/avatars/avatar1.jpg";
-const MAX_NAME_LENGTH = 64;
-const MAX_VOTE_LENGTH = 16;
+const DEFAULT_ROOM      = "default-room";
+const DEFAULT_AVATAR    = "/avatars/avatar1.jpg";
+const MAX_NAME_LENGTH   = 64;
+const MAX_VOTE_LENGTH   = 16;
 const MAX_BACKLOG_ITEMS = 200;
-const MAX_ITEM_LENGTH = 256;
-const ROOM_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours — prune idle rooms
+const MAX_ITEM_LENGTH   = 256;
+const ROOM_TTL_MS       = 4 * 60 * 60 * 1000; // 4 h — prune idle rooms
+
+// Rate-limit: max events per socket per window
+const RATE_LIMIT_WINDOW_MS = 5000;
+const RATE_LIMIT_MAX       = 20; // max events in that window
 
 // ─── Room state ───────────────────────────────────────────────────────────────
 //
 // rooms[roomId] = {
-//   revealed: boolean,
-//   votes: { [name]: { value: string, avatar: string } },
-//   backlog: { items: string[], currentIndex: number },
-//   lastActivity: number  (Date.now())
+//   revealed      : boolean,
+//   votes         : { [socketId]: { name, value, avatar } },
+//   backlog       : { items: string[], currentIndex: number },
+//   lastActivity  : number  (Date.now())
 // }
+//
+// Key change: votes are keyed by socket.id, not by name.
+// This prevents two users with the same name overwriting each other.
 
 const rooms = {};
 
@@ -46,7 +53,17 @@ function getRoom(roomId) {
   return rooms[roomId];
 }
 
-// Prune rooms that have been idle longer than ROOM_TTL_MS
+// Serialise room state for the client — convert socket-id keys into name keys
+// so the client rendering code stays unchanged.
+function roomForClient(room) {
+  const votes = {};
+  for (const entry of Object.values(room.votes)) {
+    votes[entry.name] = { value: entry.value, avatar: entry.avatar };
+  }
+  return { revealed: room.revealed, votes, backlog: room.backlog };
+}
+
+// Prune rooms idle longer than ROOM_TTL_MS
 setInterval(() => {
   const now = Date.now();
   for (const [id, room] of Object.entries(rooms)) {
@@ -54,7 +71,7 @@ setInterval(() => {
       delete rooms[id];
     }
   }
-}, 30 * 60 * 1000); // check every 30 min
+}, 30 * 60 * 1000);
 
 // ─── Input helpers ────────────────────────────────────────────────────────────
 
@@ -67,10 +84,7 @@ function sanitiseVote(raw) {
 }
 
 function sanitiseAvatar(raw) {
-  // Only allow relative paths that match our avatar pattern
-  if (typeof raw === "string" && /^\/avatars\/avatar\d+\.jpg$/.test(raw)) {
-    return raw;
-  }
+  if (typeof raw === "string" && /^\/avatars\/avatar\d+\.jpg$/.test(raw)) return raw;
   return DEFAULT_AVATAR;
 }
 
@@ -82,35 +96,61 @@ function sanitiseBacklogItems(raw) {
     .filter(Boolean);
 }
 
+// ─── Rate limiter ─────────────────────────────────────────────────────────────
+
+function makeRateLimiter() {
+  let count     = 0;
+  let windowEnd = Date.now() + RATE_LIMIT_WINDOW_MS;
+
+  return function isAllowed() {
+    const now = Date.now();
+    if (now > windowEnd) {
+      count     = 0;
+      windowEnd = now + RATE_LIMIT_WINDOW_MS;
+    }
+    count++;
+    return count <= RATE_LIMIT_MAX;
+  };
+}
+
 // ─── Socket handlers ──────────────────────────────────────────────────────────
 
 io.on("connection", (socket) => {
-  // Per-socket identity — set once on joinRoom
-  let currentRoom = null;
-  let currentName = null;
+  let currentRoom   = null;
+  let currentName   = null;
   let currentAvatar = DEFAULT_AVATAR;
-  let hasJoined = false;
+  let hasJoined     = false;
 
-  // Helper: guard any action that requires the socket to have joined a room
+  const isAllowed = makeRateLimiter();
+
   function requiresRoom(fn) {
     if (!currentRoom || !hasJoined) return;
+    if (!isAllowed()) {
+      socket.emit("error", "Rate limit exceeded. Slow down.");
+      return;
+    }
     fn();
   }
 
-  socket.on("joinRoom", (payload) => {
-    // Tolerate both object and primitive payloads defensively
-    if (!payload || typeof payload !== "object") return;
+  // Broadcast updated state to everyone in the room
+  function broadcastState() {
+    const room = rooms[currentRoom];
+    if (!room) return;
+    io.to(currentRoom).emit("stateUpdate", roomForClient(room));
+  }
 
+  // ── joinRoom ──────────────────────────────────────────────────────────────
+  socket.on("joinRoom", (payload) => {
+    if (!payload || typeof payload !== "object") return;
     const { roomId, name, avatar } = payload;
 
-    // Leave previous room if re-joining (e.g. hash change)
+    // Leave previous room — clean up stale vote entry
     if (currentRoom) {
       socket.leave(currentRoom);
-      // Clean up old vote entry when switching rooms
       const oldRoom = rooms[currentRoom];
-      if (oldRoom && currentName) {
-        delete oldRoom.votes[currentName];
-        io.to(currentRoom).emit("stateUpdate", oldRoom);
+      if (oldRoom) {
+        delete oldRoom.votes[socket.id];
+        io.to(currentRoom).emit("stateUpdate", roomForClient(oldRoom));
       }
     }
 
@@ -121,83 +161,110 @@ io.on("connection", (socket) => {
 
     socket.join(currentRoom);
 
-    // Send full current state so the joining client is immediately in sync
-    socket.emit("stateUpdate", getRoom(currentRoom));
-    // Also send the backlog separately so client mirrors server state
-    socket.emit("backlogUpdate", getRoom(currentRoom).backlog);
+    const room = getRoom(currentRoom);
+
+    // Register presence immediately (value empty = not yet voted)
+    room.votes[socket.id] = { name: currentName, value: "", avatar: currentAvatar };
+
+    socket.emit("stateUpdate",  roomForClient(room));
+    socket.emit("backlogUpdate", room.backlog);
+
+    // Notify others that someone joined
+    broadcastState();
   });
 
+  // ── vote ──────────────────────────────────────────────────────────────────
   socket.on("vote", (rawValue) => {
     requiresRoom(() => {
-      const value = sanitiseVote(rawValue);
       const room = getRoom(currentRoom);
-
-      // Prevent voting after reveal — must reset first
-      if (room.revealed) return;
-
-      room.votes[currentName] = { value, avatar: currentAvatar };
-      io.to(currentRoom).emit("stateUpdate", room);
+      if (room.revealed) return; // locked after reveal
+      const value = sanitiseVote(rawValue);
+      room.votes[socket.id] = { name: currentName, value, avatar: currentAvatar };
+      broadcastState();
     });
   });
 
+  // ── reveal ────────────────────────────────────────────────────────────────
   socket.on("reveal", () => {
     requiresRoom(() => {
       const room = getRoom(currentRoom);
       if (room.revealed) return; // idempotent
       room.revealed = true;
-      io.to(currentRoom).emit("stateUpdate", room);
+      broadcastState();
     });
   });
 
+  // ── reset ─────────────────────────────────────────────────────────────────
   socket.on("reset", () => {
     requiresRoom(() => {
       const room = getRoom(currentRoom);
       room.revealed = false;
-      room.votes = {};
-      io.to(currentRoom).emit("stateUpdate", room);
+      // Clear votes but keep participants present (empty value)
+      for (const id of Object.keys(room.votes)) {
+        room.votes[id].value = "";
+      }
+      broadcastState();
     });
   });
 
+  // ── setBacklog ────────────────────────────────────────────────────────────
   socket.on("setBacklog", (payload) => {
     requiresRoom(() => {
       if (!payload || typeof payload !== "object") return;
       const items        = sanitiseBacklogItems(payload.items);
       const currentIndex = items.length > 0 ? 0 : -1;
-
-      const room = getRoom(currentRoom);
-      room.backlog = { items, currentIndex };
+      const room         = getRoom(currentRoom);
+      room.backlog       = { items, currentIndex };
       io.to(currentRoom).emit("backlogUpdate", room.backlog);
     });
   });
 
+  // ── setBacklogIndex ───────────────────────────────────────────────────────
   socket.on("setBacklogIndex", (rawIndex) => {
     requiresRoom(() => {
-      const room  = getRoom(currentRoom);
+      const room      = getRoom(currentRoom);
       const { items } = room.backlog;
       if (!items.length) return;
-
       const index = parseInt(rawIndex, 10);
-      if (isNaN(index) || index < 0 || index >= items.length) return;
+      if (Number.isNaN(index) || index < 0 || index >= items.length) return;
 
       room.backlog.currentIndex = index;
-      // Navigating to a new item resets the round for everyone
       room.revealed = false;
-      room.votes    = {};
+      for (const id of Object.keys(room.votes)) {
+        room.votes[id].value = "";
+      }
 
-      // Send both updates atomically (same tick — no interleaved renders)
-      io.to(currentRoom).emit("stateUpdate", room);
+      io.to(currentRoom).emit("stateUpdate",  roomForClient(room));
       io.to(currentRoom).emit("backlogUpdate", room.backlog);
     });
   });
 
+  // ── disconnect ────────────────────────────────────────────────────────────
   socket.on("disconnect", () => {
-    if (!currentRoom || !currentName) return;
+    if (!currentRoom) return;
     const room = rooms[currentRoom];
     if (!room) return;
-    delete room.votes[currentName];
-    io.to(currentRoom).emit("stateUpdate", room);
+    delete room.votes[socket.id];
+    io.to(currentRoom).emit("stateUpdate", roomForClient(room));
   });
 });
+
+// ─── Graceful shutdown ────────────────────────────────────────────────────────
+
+function shutdown(signal) {
+  console.log(`${signal} received — shutting down gracefully`);
+  // Tell all connected clients so they can show a message
+  io.emit("serverShutdown", "Server is restarting. Please refresh in a moment.");
+  server.close(() => {
+    console.log("HTTP server closed");
+    process.exit(0);
+  });
+  // Force-exit after 8 s if connections hang
+  setTimeout(() => process.exit(1), 8000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT",  () => shutdown("SIGINT"));
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 

@@ -18,53 +18,42 @@
 
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       background: #f4f5f7;
       color: #222;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
       min-height: 100vh;
     }
 
     /* ─── Header ────────────────────────────────────────────────────────────── */
     header {
-      background: #0050b3;
-      color: white;
+      background: #0050b3; color: white;
       padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
     }
     header h1 { margin: 0; font-size: 18px; }
-    header span { font-size: 12px; opacity: 0.9; }
+    header span { font-size: 12px; opacity: .9; }
 
     /* ─── Main layout ───────────────────────────────────────────────────────── */
     main {
       flex: 1;
       padding: 12px 40px 16px;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
       gap: 10px;
     }
+    @media (max-width: 700px) {
+      main { padding: 10px 12px 12px; }
+    }
     .top-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: center;
+      display: flex; flex-wrap: wrap;
+      gap: 16px; align-items: center;
     }
     .field-group { display: flex; flex-direction: column; gap: 4px; }
-
     label { font-size: 12px; color: #666; }
-
     textarea {
-      padding: 6px 8px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      resize: vertical;
-      min-height: 80px;
-      background: #fff;
+      padding: 6px 8px; border-radius: 4px;
+      border: 1px solid #ccc; font-size: 14px;
+      resize: vertical; min-height: 80px; background: #fff;
     }
     .room-name { font-weight: 600; }
     .status { font-size: 13px; color: #444; min-height: 18px; }
@@ -74,9 +63,7 @@
       flex: 1;
       display: grid;
       grid-template-columns: 260px 3fr 260px;
-      gap: 16px;
-      margin-top: 8px;
-      min-height: 380px;
+      gap: 16px; margin-top: 8px; min-height: 380px;
     }
     @media (max-width: 1000px) {
       .middle-layout { display: flex; flex-direction: column; }
@@ -84,113 +71,81 @@
 
     /* ─── Participants panel ────────────────────────────────────────────────── */
     .participants-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 12px;
+      display: flex; flex-direction: column;
+      gap: 6px; font-size: 12px;
     }
     .participants-panel h3 { margin: 0 0 4px; font-size: 13px; }
     .participants-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-height: 320px;
-      overflow-y: auto;
+      display: flex; flex-direction: column;
+      gap: 6px; max-height: 320px; overflow-y: auto;
     }
     .participant-tile {
-      background: #fff;
-      border-radius: 8px;
-      border: 1px solid #cad3ff;
-      padding: 6px 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      box-shadow: 0 3px 6px rgba(0,0,0,.08);
+      background: #fff; border-radius: 8px;
+      border: 1px solid #cad3ff; padding: 6px 8px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; box-shadow: 0 3px 6px rgba(0,0,0,.08);
     }
     .participant-left { display: flex; align-items: center; gap: 6px; }
-    .participant-avatar {
-      width: 24px; height: 24px;
-      border-radius: 50%; overflow: hidden; flex-shrink: 0;
-    }
+    .participant-avatar { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
     .participant-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .participant-name { font-weight: 600; color: #1f2a4d; }
     .participant-val { font-family: monospace; font-size: 12px; color: #333; }
 
     /* ─── Center panel ──────────────────────────────────────────────────────── */
     .center-panel {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: space-between; gap: 8px;
     }
     .table-container {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 300px;
-      position: relative;
-      overflow: hidden;
-      width: 100%;
+      flex: 1; display: flex;
+      align-items: center; justify-content: center;
+      min-height: 300px; position: relative;
+      overflow: hidden; width: 100%;
     }
     .table-circle {
-      width: 260px; height: 260px;
-      border-radius: 50%;
-      background: #fff;
-      border: 4px solid #d0d4e0;
+      width: 260px; height: 260px; border-radius: 50%;
+      background: #fff; border: 4px solid #d0d4e0;
       box-shadow: 0 2px 10px rgba(0,0,0,.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 1;
     }
     #tableAverage { font-size: 24px; font-weight: 700; color: #1f2a4d; }
 
+    /* Seats layer now uses % positioning — scales with any count */
     .seats-layer {
       position: absolute;
-      width: 420px; height: 420px;
+      /* sized to match the orbit diameter; JS sets this dynamically */
       pointer-events: none;
     }
     .seat {
       position: absolute;
-      width: 110px;
       transform: translate(-50%, -50%);
       text-align: center;
       pointer-events: auto;
     }
     .seat-card {
-      background: white;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      box-shadow: 0 1px 4px rgba(0,0,0,.15);
-      padding: 4px 6px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      font-size: 11px;
+      background: white; border-radius: 6px;
+      border: 1px solid #ccc; box-shadow: 0 1px 4px rgba(0,0,0,.15);
+      padding: 4px 6px; display: flex; flex-direction: column;
+      align-items: center; gap: 3px; font-size: 11px;
+      /* shrink card width for large groups */
+      width: var(--seat-width, 100px);
     }
-    .seat-avatar { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; }
+    .seat-avatar { width: 22px; height: 22px; border-radius: 50%; overflow: hidden; }
     .seat-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .seat-name { font-weight: 600; font-size: 11px; color: #333; }
+    .seat-name {
+      font-weight: 600; font-size: 10px; color: #333;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: calc(var(--seat-width, 100px) - 16px);
+    }
     .seat-value {
-      font-family: monospace;
-      font-size: 13px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #f4f4f4;
-      min-width: 28px;
-      text-align: center;
+      font-family: monospace; font-size: 12px;
+      padding: 2px 5px; border-radius: 4px;
+      background: #f4f4f4; min-width: 24px; text-align: center;
     }
     .seat-value.hidden { background: #eee; color: #aaa; }
-
-    /* voted-but-not-revealed pulse so the table feels alive */
     .seat-value.voted-hidden {
-      background: #dbeafe;
-      color: #1d4ed8;
+      background: #dbeafe; color: #1d4ed8;
       animation: pulse 1.8s ease-in-out infinite;
     }
     @keyframes pulse {
@@ -205,20 +160,15 @@
     .backlog-panel { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
     .backlog-panel h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
     .backlog-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-height: 220px;
-      overflow-y: auto;
+      display: flex; flex-direction: column;
+      gap: 6px; max-height: 220px; overflow-y: auto;
     }
     .backlog-card {
       --border-radius: .75rem;
       --primary-color: #7257fa;
       --secondary-color: #3c3852;
-      width: 100%;
-      max-width: 230px;
-      padding: .75rem .9rem;
-      cursor: pointer;
+      width: 100%; max-width: 230px;
+      padding: .75rem .9rem; cursor: pointer;
       border-radius: var(--border-radius);
       background: #f1f1f3;
       box-shadow: 0 8px 16px rgba(0,0,0,.03);
@@ -226,20 +176,16 @@
     }
     .backlog-card > * + * { margin-top: .5em; }
     .backlog-card .card__title {
-      font-size: .95rem;
-      font-weight: bold;
-      color: var(--secondary-color);
-      word-break: break-word;
+      font-size: .95rem; font-weight: bold;
+      color: var(--secondary-color); word-break: break-word;
     }
     .backlog-card .card__date { color: #6e6b80; font-size: .7rem; }
     .backlog-card .card__arrow {
-      position: absolute;
-      background: var(--primary-color);
+      position: absolute; background: var(--primary-color);
       padding: .3rem;
       border-top-left-radius: var(--border-radius);
       border-bottom-right-radius: var(--border-radius);
-      bottom: 0; right: 0;
-      transition: .2s;
+      bottom: 0; right: 0; transition: .2s;
       display: flex; align-items: center; justify-content: center;
     }
     .backlog-card svg { transition: .2s; }
@@ -250,76 +196,50 @@
 
     .backlog-input { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
     .backlog-buttons {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-      font-size: 11px;
-      color: #555;
+      display: flex; gap: 8px; flex-wrap: wrap;
+      align-items: center; font-size: 11px; color: #555;
     }
     #itemsInput {
-      padding: 6px 8px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      background: #fff;
+      padding: 6px 8px; border-radius: 4px;
+      border: 1px solid #ccc; font-size: 14px; background: #fff;
     }
 
     /* ─── Voting cards row ──────────────────────────────────────────────────── */
     .cards-row {
-      margin-top: 10px;
-      padding-top: 8px;
+      margin-top: 10px; padding-top: 8px;
       border-top: 1px solid #ddd;
-      display: flex;
-      justify-content: center;
+      display: flex; justify-content: center;
     }
     .cards { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
     .vote-card {
       width: 48px; height: 64px;
-      background: white;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      cursor: pointer;
+      background: white; border-radius: 4px; border: 1px solid #ccc;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; cursor: pointer;
       transition: background .1s, transform .05s, border-color .1s;
-      font-size: 13px;
-      user-select: none;
+      font-size: 13px; user-select: none;
     }
     .vote-card:hover { background: #f0f0ff; transform: translateY(-2px); }
     .vote-card.selected {
-      background: #0050b3;
-      color: white;
-      border-color: #003a80;
-      transform: translateY(-4px);
+      background: #0050b3; color: white;
+      border-color: #003a80; transform: translateY(-4px);
     }
-    /* Disable cards once votes are revealed */
     .vote-card.disabled {
-      opacity: .45;
-      cursor: not-allowed;
-      pointer-events: none;
+      opacity: .45; cursor: not-allowed; pointer-events: none;
+    }
+    @media (max-width: 700px) {
+      .vote-card { width: 40px; height: 56px; font-size: 12px; }
     }
 
-    /* ─── Shared action button ──────────────────────────────────────────────── */
+    /* ─── Action buttons ────────────────────────────────────────────────────── */
     .action-button {
-      cursor: pointer;
-      border-radius: .5rem;
-      border: 1px solid #007bff;
-      background: #007bff;
-      color: #fff;
-      font-size: .8rem;
-      font-weight: 600;
-      padding: .35rem .6rem;
-      min-width: 7rem;
-      height: 2.1rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      cursor: pointer; border-radius: .5rem;
+      border: 1px solid #007bff; background: #007bff; color: #fff;
+      font-size: .8rem; font-weight: 600;
+      padding: .35rem .6rem; min-width: 7rem; height: 2.1rem;
+      display: inline-flex; align-items: center; justify-content: center;
       box-shadow: 0 2px 4px rgba(0,0,0,.15);
-      white-space: nowrap;
-      gap: .35rem;
+      white-space: nowrap; gap: .35rem;
       transition: background .15s, border-color .15s, opacity .15s;
     }
     .action-button:hover  { background: #0065d4; border-color: #0065d4; }
@@ -330,87 +250,56 @@
 
     /* ─── Name display ──────────────────────────────────────────────────────── */
     .name-label {
-      position: relative;
-      display: flex;
-      width: 250px;
-      border-radius: 6px;
-      border: 2px solid #373737;
-      padding: 8px 8px 8px 10px;
-      background: #fff;
-      color: #373737;
+      position: relative; display: flex; width: 250px;
+      border-radius: 6px; border: 2px solid #373737;
+      padding: 8px 8px 8px 10px; background: #fff; color: #373737;
     }
     .name-label .icon {
-      position: absolute;
-      top: 50%; right: 0;
-      transform: translate(-50%, -50%);
-      color: #888;
-      pointer-events: none;
+      position: absolute; top: 50%; right: 0;
+      transform: translate(-50%, -50%); color: #888; pointer-events: none;
     }
     .name-label .input {
-      background: transparent;
-      outline: none;
-      border: none;
-      color: #373737;
-      font-size: 14px;
-      width: 100%;
+      background: transparent; outline: none; border: none;
+      color: #373737; font-size: 14px; width: 100%;
     }
 
-    /* ─── Toast notification ────────────────────────────────────────────────── */
+    /* ─── Toast ─────────────────────────────────────────────────────────────── */
     #toast {
-      position: fixed;
-      bottom: 20px; left: 50%;
+      position: fixed; bottom: 20px; left: 50%;
       transform: translateX(-50%) translateY(60px);
-      background: #1f2a4d;
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-size: 13px;
-      opacity: 0;
-      transition: transform .3s, opacity .3s;
-      pointer-events: none;
-      z-index: 9999;
+      background: #1f2a4d; color: #fff;
+      padding: 10px 20px; border-radius: 8px; font-size: 13px;
+      opacity: 0; transition: transform .3s, opacity .3s;
+      pointer-events: none; z-index: 9999;
     }
-    #toast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-    /* ─── Join dialog overlay ───────────────────────────────────────────────── */
+    /* ─── Join dialog ───────────────────────────────────────────────────────── */
     .overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       z-index: 1000;
     }
     .overlay.hidden { display: none; }
     .dialog {
-      background: #fff;
-      border-radius: 10px;
+      background: #fff; border-radius: 10px;
       box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      padding: 20px 24px 16px;
-      width: 360px;
-      max-width: 90vw;
+      padding: 20px 24px 16px; width: 360px; max-width: 90vw;
     }
     .dialog h2 { margin: 0 0 8px; font-size: 18px; }
     .dialog p  { margin: 0 0 14px; font-size: 13px; color: #555; }
     .dialog-row { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
     .dialog-row input {
-      width: 100%;
-      padding: 6px 8px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
+      width: 100%; padding: 6px 8px;
+      border-radius: 6px; border: 1px solid #ccc; font-size: 14px;
     }
     .dialog-row input.error { border-color: #e24b4a; }
     .dialog-row .error-msg { font-size: 11px; color: #e24b4a; min-height: 14px; }
     .avatar-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
     .avatar-option {
-      width: 40px; height: 40px;
-      border-radius: 50%; overflow: hidden;
-      border: 2px solid transparent;
-      cursor: pointer;
+      width: 40px; height: 40px; border-radius: 50%; overflow: hidden;
+      border: 2px solid transparent; cursor: pointer;
       transition: border-color .15s, box-shadow .15s;
     }
     .avatar-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -489,13 +378,11 @@
     </div>
   </div>
 
-  <!-- Bottom: voting cards -->
   <div class="cards-row">
     <div class="cards" id="cardsContainer" role="group" aria-label="Voting cards"></div>
   </div>
 </main>
 
-<!-- Toast -->
 <div id="toast" role="alert" aria-live="assertive"></div>
 
 <!-- Join dialog -->
@@ -537,43 +424,46 @@ const AVATAR_FILES = [
 
 // ─── DOM refs ──────────────────────────────────────────────────────────────────
 
-const $  = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 
-const roomLabel       = $("roomLabel");
-const roomNameDisplay = $("roomNameDisplay");
-const nameInput       = $("nameInput");
-const cardsContainer  = $("cardsContainer");
-const statusText      = $("statusText");
-const summaryText     = $("summaryText");
-const revealBtn       = $("revealBtn");
-const resetBtn        = $("resetBtn");
-const seatsLayer      = $("seatsLayer");
-const tableAverage    = $("tableAverage");
-const participantsList= $("participantsList");
-const itemsInput      = $("itemsInput");
-const loadItemsBtn    = $("loadItemsBtn");
-const prevItemBtn     = $("prevItemBtn");
-const nextItemBtn     = $("nextItemBtn");
-const backlogList     = $("backlogList");
-const itemIndexLabel  = $("itemIndexLabel");
-const overlay         = $("nameAvatarOverlay");
-const dialogNameInput = $("dialogNameInput");
-const avatarGrid      = $("avatarGrid");
-const dialogConfirmBtn= $("dialogConfirmBtn");
-const nameError       = $("nameError");
-const toast           = $("toast");
+const roomLabel        = $("roomLabel");
+const roomNameDisplay  = $("roomNameDisplay");
+const nameInput        = $("nameInput");
+const cardsContainer   = $("cardsContainer");
+const statusText       = $("statusText");
+const summaryText      = $("summaryText");
+const revealBtn        = $("revealBtn");
+const resetBtn         = $("resetBtn");
+const seatsLayer       = $("seatsLayer");
+const tableAverage     = $("tableAverage");
+const participantsList = $("participantsList");
+const itemsInput       = $("itemsInput");
+const loadItemsBtn     = $("loadItemsBtn");
+const prevItemBtn      = $("prevItemBtn");
+const nextItemBtn      = $("nextItemBtn");
+const backlogList      = $("backlogList");
+const itemIndexLabel   = $("itemIndexLabel");
+const overlay          = $("nameAvatarOverlay");
+const dialogNameInput  = $("dialogNameInput");
+const avatarGrid       = $("avatarGrid");
+const dialogConfirmBtn = $("dialogConfirmBtn");
+const nameError        = $("nameError");
+const toast            = $("toast");
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
 const ROOM_ID = (window.location.hash.replace("#", "").trim()) || "default-room";
 
-let socket        = null;
-let currentState  = { revealed: false, votes: {} };
-let myCurrentVote = null;
-let myAvatarIndex = 0;
-let items         = [];
+let socket           = null;
+let currentState     = { revealed: false, votes: {} };
+let myCurrentVote    = null;
+let myAvatarIndex    = 0;
+let myName           = "";         // set on confirmDialog; used for reconnect
+let myAvatarUrl      = "";         // set on confirmDialog; used for reconnect
+let hasJoined        = false;      // true after the first confirmDialog
+let items            = [];
 let currentItemIndex = -1;
-let toastTimer    = null;
+let toastTimer       = null;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -581,7 +471,6 @@ function getMyAvatarUrl() {
   return AVATAR_FILES[myAvatarIndex] ?? AVATAR_FILES[0];
 }
 
-/** Extract value & avatar from a vote entry regardless of server shape. */
 function parseVoteEntry(info) {
   if (info && typeof info === "object") {
     return { value: info.value ?? "", avatar: info.avatar ?? AVATAR_FILES[0] };
@@ -596,11 +485,18 @@ function showToast(msg, durationMs = 2800) {
   toastTimer = setTimeout(() => toast.classList.remove("show"), durationMs);
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 // ─── Backlog ──────────────────────────────────────────────────────────────────
 
 function updateBacklogTiles() {
   backlogList.innerHTML = "";
-
   if (!items.length) {
     backlogList.innerHTML = "<div style='font-size:11px;color:#777;'>No items loaded.</div>";
     itemIndexLabel.textContent = "";
@@ -618,7 +514,6 @@ function updateBacklogTiles() {
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");
     card.setAttribute("aria-label", `Select item: ${text}`);
-
     card.innerHTML = `
       <div class="card__title">${escapeHtml(text)}</div>
       <div class="card__date">Item ${idx + 1} of ${items.length}</div>
@@ -631,7 +526,6 @@ function updateBacklogTiles() {
     const activate = () => goToItem(idx);
     card.addEventListener("click", activate);
     card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") activate(); });
-
     wrapper.appendChild(card);
     frag.appendChild(wrapper);
   });
@@ -652,7 +546,6 @@ loadItemsBtn.addEventListener("click", () => {
     .map((s) => s.trim())
     .filter(Boolean)
     .slice(0, 200);
-
   if (!parsed.length) { showToast("No items found in the textarea."); return; }
   socket?.emit("setBacklog", { items: parsed, currentIndex: 0 });
   showToast(`${parsed.length} item${parsed.length > 1 ? "s" : ""} loaded and synced.`);
@@ -674,7 +567,7 @@ function renderCards() {
     div.setAttribute("role", "button");
     div.setAttribute("tabindex", "0");
     div.setAttribute("aria-label", `Vote ${val}`);
-    div.addEventListener("click", () => handleVote(val));
+    div.addEventListener("click",   () => handleVote(val));
     div.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") handleVote(val); });
     frag.appendChild(div);
   });
@@ -685,14 +578,14 @@ function syncCardState() {
   document.querySelectorAll(".vote-card").forEach((card) => {
     const isSelected = card.dataset.value === myCurrentVote;
     const isRevealed = currentState.revealed;
-    card.classList.toggle("selected", isSelected);
-    card.classList.toggle("disabled", isRevealed);
-    card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+    card.classList.toggle("selected",  isSelected);
+    card.classList.toggle("disabled",  isRevealed);
+    card.setAttribute("aria-pressed",  isSelected ? "true" : "false");
     card.setAttribute("aria-disabled", isRevealed ? "true" : "false");
   });
 }
 
-// ─── Seats ────────────────────────────────────────────────────────────────────
+// ─── Seats — dynamically scaled for any participant count ─────────────────────
 
 function renderSeats() {
   seatsLayer.innerHTML = "";
@@ -701,22 +594,35 @@ function renderSeats() {
 
   entries.sort(([a], [b]) => a.localeCompare(b));
 
-  const cx = 210, cy = 210, r = 190;
+  const count = entries.length;
+
+  // Scale seat size and orbit radius down as more people join.
+  // Up to 8 people: full size. 9-16: shrink. 17+: shrink more.
+  const seatWidth  = count <= 8 ? 100 : count <= 16 ? 76 : 58;
+  const layerSize  = count <= 8 ? 420 : count <= 16 ? 460 : 500;
+  const orbitR     = count <= 8 ? 190 : count <= 16 ? 210 : 230;
+
+  seatsLayer.style.width  = layerSize + "px";
+  seatsLayer.style.height = layerSize + "px";
+
+  const cx = layerSize / 2;
+  const cy = layerSize / 2;
+
   const frag = document.createDocumentFragment();
 
   entries.forEach(([name, info], i) => {
     const { value, avatar } = parseVoteEntry(info);
-    const angle = (2 * Math.PI * i) / entries.length - Math.PI / 2;
+    const angle = (2 * Math.PI * i) / count - Math.PI / 2;
 
     const seat = document.createElement("div");
     seat.className = "seat";
-    seat.style.left = (cx + r * Math.cos(angle)) + "px";
-    seat.style.top  = (cy + r * Math.sin(angle)) + "px";
+    seat.style.setProperty("--seat-width", seatWidth + "px");
+    seat.style.left = (cx + orbitR * Math.cos(angle)) + "px";
+    seat.style.top  = (cy + orbitR * Math.sin(angle)) + "px";
 
     const hasVoted = Boolean(value);
     let valueCls = "seat-value";
     let valueText;
-
     if (!currentState.revealed) {
       valueCls += hasVoted ? " voted-hidden" : " hidden";
       valueText = hasVoted ? "●" : "–";
@@ -753,7 +659,6 @@ function renderParticipantsTiles() {
 
   entries.forEach(([name, info]) => {
     const { value, avatar } = parseVoteEntry(info);
-
     let valText, valColor;
     if (!currentState.revealed) {
       valText  = value ? "Voted ✓" : "Waiting…";
@@ -789,14 +694,13 @@ function updateStatusAndSummary() {
     statusText.textContent = total
       ? `${votedCount} of ${total} voted. Click "Reveal" when everyone's done.`
       : "No votes yet. Pick a card to cast your vote.";
-    summaryText.textContent = "";
+    summaryText.textContent  = "";
     tableAverage.textContent = "";
     revealBtn.disabled = total === 0;
     return;
   }
 
   statusText.textContent = `Revealed — ${total} participant${total !== 1 ? "s" : ""}.`;
-
   const numerics = entries
     .map(([, info]) => parseFloat(parseVoteEntry(info).value))
     .filter((n) => Number.isFinite(n));
@@ -805,10 +709,10 @@ function updateStatusAndSummary() {
     const min = Math.min(...numerics);
     const max = Math.max(...numerics);
     const avg = numerics.reduce((a, b) => a + b, 0) / numerics.length;
-    summaryText.textContent = `Min: ${min} | Max: ${max} | Avg: ${avg.toFixed(2)}`;
+    summaryText.textContent  = `Min: ${min} | Max: ${max} | Avg: ${avg.toFixed(2)}`;
     tableAverage.textContent = avg.toFixed(2);
   } else {
-    summaryText.textContent = "No numeric votes to summarise.";
+    summaryText.textContent  = "No numeric votes to summarise.";
     tableAverage.textContent = "";
   }
 }
@@ -825,15 +729,13 @@ function renderAll() {
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 function handleVote(value) {
-  if (currentState.revealed) return; // guard: cards are disabled but belt-and-suspenders
+  if (currentState.revealed) return;
   myCurrentVote = value;
   syncCardState();
   socket?.emit("vote", value);
 }
 
-function handleReveal() {
-  socket?.emit("reveal");
-}
+function handleReveal() { socket?.emit("reveal"); }
 
 function handleReset() {
   myCurrentVote = null;
@@ -843,11 +745,24 @@ function handleReset() {
 
 // ─── Socket ───────────────────────────────────────────────────────────────────
 
+function joinRoom() {
+  if (!socket || !hasJoined) return;
+  socket.emit("joinRoom", { roomId: ROOM_ID, name: myName, avatar: myAvatarUrl });
+}
+
 function connectSocket() {
   socket = io({ reconnectionDelay: 1000, reconnectionDelayMax: 5000 });
 
   socket.on("connect", () => {
-    statusText.textContent = "Connected. Enter your name and avatar to start.";
+    // On every (re)connect, rejoin the room if the user has already identified.
+    // This handles Render spin-down restarts and network blips transparently.
+    if (hasJoined) {
+      joinRoom();
+      statusText.textContent = "Reconnected — rejoined room.";
+      showToast("Reconnected.");
+    } else {
+      statusText.textContent = "Connected. Enter your name and avatar to start.";
+    }
   });
 
   socket.on("disconnect", (reason) => {
@@ -858,14 +773,21 @@ function connectSocket() {
     statusText.textContent = "Connection error — retrying…";
   });
 
+  // Server sends this before a graceful shutdown (SIGTERM/SIGINT)
+  socket.on("serverShutdown", (msg) => {
+    showToast(msg || "Server restarting — please refresh shortly.", 8000);
+    statusText.textContent = "⚠ Server is restarting…";
+  });
+
+  socket.on("error", (msg) => {
+    showToast(msg || "An error occurred.", 3000);
+  });
+
   socket.on("stateUpdate", (state) => {
     currentState = state ?? { revealed: false, votes: {} };
-
-    // Keep local vote in sync if server cleared it (reset / item navigation)
-    const myName  = nameInput.value.trim() || "Anonymous";
+    // Sync local vote if server cleared it (reset / item navigation)
     const myEntry = currentState.votes[myName];
     if (!myEntry || !parseVoteEntry(myEntry).value) myCurrentVote = null;
-
     renderAll();
   });
 
@@ -880,7 +802,6 @@ function connectSocket() {
 
 function confirmDialog() {
   const rawName = dialogNameInput.value.trim();
-
   if (!rawName) {
     nameError.textContent = "Please enter a name.";
     dialogNameInput.classList.add("error");
@@ -891,12 +812,13 @@ function confirmDialog() {
   nameError.textContent = "";
   dialogNameInput.classList.remove("error");
 
-  const finalName  = rawName.slice(0, 64);
-  const avatarUrl  = getMyAvatarUrl();
+  myName      = rawName.slice(0, 64);
+  myAvatarUrl = getMyAvatarUrl();
+  hasJoined   = true;
 
-  nameInput.value = finalName;
+  nameInput.value = myName;
 
-  socket?.emit("joinRoom", { roomId: ROOM_ID, name: finalName, avatar: avatarUrl });
+  joinRoom(); // uses the stored name + avatar
 
   overlay.classList.add("hidden");
   statusText.textContent = "Pick a card to cast your vote.";
@@ -907,57 +829,45 @@ function buildAvatarGrid() {
   AVATAR_FILES.forEach((url, index) => {
     const wrapper = document.createElement("div");
     wrapper.className = "avatar-option" + (index === 0 ? " selected" : "");
-    wrapper.setAttribute("role", "radio");
+    wrapper.setAttribute("role",         "radio");
     wrapper.setAttribute("aria-checked", index === 0 ? "true" : "false");
-    wrapper.setAttribute("tabindex", index === 0 ? "0" : "-1");
-    wrapper.setAttribute("aria-label", `Avatar ${index + 1}`);
+    wrapper.setAttribute("tabindex",     index === 0 ? "0" : "-1");
+    wrapper.setAttribute("aria-label",   `Avatar ${index + 1}`);
 
     const img = document.createElement("img");
-    img.src = url;
-    img.alt = "";
+    img.src = url; img.alt = "";
     wrapper.appendChild(img);
 
     const select = () => {
       myAvatarIndex = index;
       document.querySelectorAll(".avatar-option").forEach((opt, i) => {
         const active = i === myAvatarIndex;
-        opt.classList.toggle("selected", active);
-        opt.setAttribute("aria-checked", active ? "true" : "false");
-        opt.setAttribute("tabindex", active ? "0" : "-1");
+        opt.classList.toggle("selected",  active);
+        opt.setAttribute("aria-checked",  active ? "true" : "false");
+        opt.setAttribute("tabindex",      active ? "0" : "-1");
       });
     };
 
-    wrapper.addEventListener("click", select);
+    wrapper.addEventListener("click",   select);
     wrapper.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") select(); });
     avatarGrid.appendChild(wrapper);
   });
 }
 
-// ─── XSS helper ───────────────────────────────────────────────────────────────
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 // ─── Event wiring ─────────────────────────────────────────────────────────────
 
 dialogConfirmBtn.addEventListener("click", confirmDialog);
-dialogNameInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); confirmDialog(); } });
-
-// Enter on the overlay itself (anywhere) also confirms
+dialogNameInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); confirmDialog(); }
+});
 overlay.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !overlay.classList.contains("hidden")) {
-    e.preventDefault();
-    confirmDialog();
+    e.preventDefault(); confirmDialog();
   }
 });
 
 revealBtn.addEventListener("click", handleReveal);
-resetBtn.addEventListener("click", handleReset);
+resetBtn.addEventListener("click",  handleReset);
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
