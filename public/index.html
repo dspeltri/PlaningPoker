@@ -13,41 +13,50 @@
   />
 
   <style>
-    /* ─── Reset / base ──────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; }
 
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       margin: 0; padding: 0;
-      background: #f4f5f7;
-      color: #222;
-      display: flex; flex-direction: column;
-      min-height: 100vh;
+      background: #f4f5f7; color: #222;
+      display: flex; flex-direction: column; min-height: 100vh;
     }
 
-    /* ─── Header ────────────────────────────────────────────────────────────── */
+    /* ─── Header ─────────────────────────────────────────────────────────────── */
     header {
       background: #0050b3; color: white;
       padding: 10px 20px;
       display: flex; align-items: center; justify-content: space-between;
     }
     header h1 { margin: 0; font-size: 18px; }
-    header span { font-size: 12px; opacity: .9; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    header .room-chip {
+      font-size: 12px; opacity: .9;
+      background: rgba(255,255,255,.15);
+      border-radius: 20px; padding: 3px 10px;
+      letter-spacing: .3px;
+    }
 
-    /* ─── Main layout ───────────────────────────────────────────────────────── */
+    /* Share button in header */
+    .share-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35);
+      color: #fff; border-radius: 20px;
+      padding: 4px 12px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+      white-space: nowrap;
+    }
+    .share-btn:hover { background: rgba(255,255,255,.28); }
+    .share-btn svg { flex-shrink: 0; }
+
+    /* ─── Main ───────────────────────────────────────────────────────────────── */
     main {
-      flex: 1;
-      padding: 12px 40px 16px;
-      display: flex; flex-direction: column;
-      gap: 10px;
+      flex: 1; padding: 12px 40px 16px;
+      display: flex; flex-direction: column; gap: 10px;
     }
-    @media (max-width: 700px) {
-      main { padding: 10px 12px 12px; }
-    }
-    .top-row {
-      display: flex; flex-wrap: wrap;
-      gap: 16px; align-items: center;
-    }
+    @media (max-width: 700px) { main { padding: 10px 12px 12px; } }
+
+    .top-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
     .field-group { display: flex; flex-direction: column; gap: 4px; }
     label { font-size: 12px; color: #666; }
     textarea {
@@ -58,31 +67,21 @@
     .room-name { font-weight: 600; }
     .status { font-size: 13px; color: #444; min-height: 18px; }
 
-    /* ─── Three-column middle ───────────────────────────────────────────────── */
+    /* ─── Three-column middle ────────────────────────────────────────────────── */
     .middle-layout {
-      flex: 1;
-      display: grid;
+      flex: 1; display: grid;
       grid-template-columns: 260px 3fr 260px;
       gap: 16px; margin-top: 8px; min-height: 380px;
     }
-    @media (max-width: 1000px) {
-      .middle-layout { display: flex; flex-direction: column; }
-    }
+    @media (max-width: 1000px) { .middle-layout { display: flex; flex-direction: column; } }
 
-    /* ─── Participants panel ────────────────────────────────────────────────── */
-    .participants-panel {
-      display: flex; flex-direction: column;
-      gap: 6px; font-size: 12px;
-    }
+    /* ─── Participants panel ─────────────────────────────────────────────────── */
+    .participants-panel { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
     .participants-panel h3 { margin: 0 0 4px; font-size: 13px; }
-    .participants-list {
-      display: flex; flex-direction: column;
-      gap: 6px; max-height: 320px; overflow-y: auto;
-    }
+    .participants-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
     .participant-tile {
-      background: #fff; border-radius: 8px;
-      border: 1px solid #cad3ff; padding: 6px 8px;
-      display: flex; justify-content: space-between; align-items: center;
+      background: #fff; border-radius: 8px; border: 1px solid #cad3ff;
+      padding: 6px 8px; display: flex; justify-content: space-between; align-items: center;
       font-size: 12px; box-shadow: 0 3px 6px rgba(0,0,0,.08);
     }
     .participant-left { display: flex; align-items: center; gap: 6px; }
@@ -91,16 +90,19 @@
     .participant-name { font-weight: 600; color: #1f2a4d; }
     .participant-val { font-family: monospace; font-size: 12px; color: #333; }
 
-    /* ─── Center panel ──────────────────────────────────────────────────────── */
+    /* ─── Center panel ───────────────────────────────────────────────────────── */
     .center-panel {
       display: flex; flex-direction: column;
       align-items: center; justify-content: space-between; gap: 8px;
+      /* reserves space for seat cards orbiting above/below the table circle */
+      padding-top: 70px; padding-bottom: 16px;
     }
     .table-container {
-      flex: 1; display: flex;
-      align-items: center; justify-content: center;
-      min-height: 300px; position: relative;
-      overflow: hidden; width: 100%;
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      /* min-height must be >= largest seats-layer size (500px) + seat card height (~60px) */
+      min-height: 560px; position: relative;
+      /* overflow must be visible so seat cards outside the circle aren't clipped */
+      overflow: visible; width: 100%;
     }
     .table-circle {
       width: 260px; height: 260px; border-radius: 50%;
@@ -110,25 +112,13 @@
       position: relative; z-index: 1;
     }
     #tableAverage { font-size: 24px; font-weight: 700; color: #1f2a4d; }
-
-    /* Seats layer now uses % positioning — scales with any count */
-    .seats-layer {
-      position: absolute;
-      /* sized to match the orbit diameter; JS sets this dynamically */
-      pointer-events: none;
-    }
-    .seat {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      pointer-events: auto;
-    }
+    .seats-layer { position: absolute; pointer-events: none; }
+    .seat { position: absolute; transform: translate(-50%,-50%); text-align: center; pointer-events: auto; }
     .seat-card {
-      background: white; border-radius: 6px;
-      border: 1px solid #ccc; box-shadow: 0 1px 4px rgba(0,0,0,.15);
+      background: white; border-radius: 6px; border: 1px solid #ccc;
+      box-shadow: 0 1px 4px rgba(0,0,0,.15);
       padding: 4px 6px; display: flex; flex-direction: column;
       align-items: center; gap: 3px; font-size: 11px;
-      /* shrink card width for large groups */
       width: var(--seat-width, 100px);
     }
     .seat-avatar { width: 22px; height: 22px; border-radius: 50%; overflow: hidden; }
@@ -148,98 +138,62 @@
       background: #dbeafe; color: #1d4ed8;
       animation: pulse 1.8s ease-in-out infinite;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: .55; }
-    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
 
     .summary { font-size: 13px; color: #444; text-align: center; min-height: 18px; }
     .center-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 4px; }
 
-    /* ─── Backlog panel ─────────────────────────────────────────────────────── */
+    /* ─── Backlog panel ──────────────────────────────────────────────────────── */
     .backlog-panel { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
     .backlog-panel h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
-    .backlog-list {
-      display: flex; flex-direction: column;
-      gap: 6px; max-height: 220px; overflow-y: auto;
-    }
+    .backlog-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
     .backlog-card {
-      --border-radius: .75rem;
-      --primary-color: #7257fa;
-      --secondary-color: #3c3852;
-      width: 100%; max-width: 230px;
-      padding: .75rem .9rem; cursor: pointer;
-      border-radius: var(--border-radius);
-      background: #f1f1f3;
-      box-shadow: 0 8px 16px rgba(0,0,0,.03);
-      position: relative;
+      --border-radius: .75rem; --primary-color: #7257fa; --secondary-color: #3c3852;
+      width: 100%; max-width: 230px; padding: .75rem .9rem; cursor: pointer;
+      border-radius: var(--border-radius); background: #f1f1f3;
+      box-shadow: 0 8px 16px rgba(0,0,0,.03); position: relative;
     }
     .backlog-card > * + * { margin-top: .5em; }
-    .backlog-card .card__title {
-      font-size: .95rem; font-weight: bold;
-      color: var(--secondary-color); word-break: break-word;
-    }
+    .backlog-card .card__title { font-size: .95rem; font-weight: bold; color: var(--secondary-color); word-break: break-word; }
     .backlog-card .card__date { color: #6e6b80; font-size: .7rem; }
     .backlog-card .card__arrow {
-      position: absolute; background: var(--primary-color);
-      padding: .3rem;
-      border-top-left-radius: var(--border-radius);
-      border-bottom-right-radius: var(--border-radius);
-      bottom: 0; right: 0; transition: .2s;
-      display: flex; align-items: center; justify-content: center;
+      position: absolute; background: var(--primary-color); padding: .3rem;
+      border-top-left-radius: var(--border-radius); border-bottom-right-radius: var(--border-radius);
+      bottom: 0; right: 0; transition: .2s; display: flex; align-items: center; justify-content: center;
     }
     .backlog-card svg { transition: .2s; }
     .backlog-card:hover .card__title { color: var(--primary-color); text-decoration: underline; }
     .backlog-card:hover .card__arrow { background: #111; }
     .backlog-card:hover .card__arrow svg { transform: translateX(3px); }
     .backlog-item-tile.current .card__title { color: var(--primary-color); }
-
     .backlog-input { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
-    .backlog-buttons {
-      display: flex; gap: 8px; flex-wrap: wrap;
-      align-items: center; font-size: 11px; color: #555;
-    }
-    #itemsInput {
-      padding: 6px 8px; border-radius: 4px;
-      border: 1px solid #ccc; font-size: 14px; background: #fff;
-    }
+    .backlog-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 11px; color: #555; }
+    #itemsInput { padding: 6px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; background: #fff; }
 
-    /* ─── Voting cards row ──────────────────────────────────────────────────── */
-    .cards-row {
-      margin-top: 10px; padding-top: 8px;
-      border-top: 1px solid #ddd;
-      display: flex; justify-content: center;
-    }
+    /* ─── Voting cards ───────────────────────────────────────────────────────── */
+    .cards-row { margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd; display: flex; justify-content: center; }
     .cards { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
     .vote-card {
-      width: 48px; height: 64px;
-      background: white; border-radius: 4px; border: 1px solid #ccc;
+      width: 48px; height: 64px; background: white;
+      border-radius: 4px; border: 1px solid #ccc;
       display: flex; align-items: center; justify-content: center;
       font-weight: 600; cursor: pointer;
       transition: background .1s, transform .05s, border-color .1s;
       font-size: 13px; user-select: none;
     }
     .vote-card:hover { background: #f0f0ff; transform: translateY(-2px); }
-    .vote-card.selected {
-      background: #0050b3; color: white;
-      border-color: #003a80; transform: translateY(-4px);
-    }
-    .vote-card.disabled {
-      opacity: .45; cursor: not-allowed; pointer-events: none;
-    }
-    @media (max-width: 700px) {
-      .vote-card { width: 40px; height: 56px; font-size: 12px; }
-    }
+    .vote-card.selected { background: #0050b3; color: white; border-color: #003a80; transform: translateY(-4px); }
+    .vote-card.disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+    @media (max-width: 700px) { .vote-card { width: 40px; height: 56px; font-size: 12px; } }
 
-    /* ─── Action buttons ────────────────────────────────────────────────────── */
+    /* ─── Action buttons ─────────────────────────────────────────────────────── */
     .action-button {
       cursor: pointer; border-radius: .5rem;
       border: 1px solid #007bff; background: #007bff; color: #fff;
       font-size: .8rem; font-weight: 600;
       padding: .35rem .6rem; min-width: 7rem; height: 2.1rem;
       display: inline-flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,.15);
-      white-space: nowrap; gap: .35rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,.15); white-space: nowrap; gap: .35rem;
       transition: background .15s, border-color .15s, opacity .15s;
     }
     .action-button:hover  { background: #0065d4; border-color: #0065d4; }
@@ -248,22 +202,16 @@
     .action-button.secondary { background: #6c757d; border-color: #6c757d; }
     .action-button.secondary:hover { background: #5a6268; border-color: #5a6268; }
 
-    /* ─── Name display ──────────────────────────────────────────────────────── */
+    /* ─── Name label ─────────────────────────────────────────────────────────── */
     .name-label {
       position: relative; display: flex; width: 250px;
       border-radius: 6px; border: 2px solid #373737;
       padding: 8px 8px 8px 10px; background: #fff; color: #373737;
     }
-    .name-label .icon {
-      position: absolute; top: 50%; right: 0;
-      transform: translate(-50%, -50%); color: #888; pointer-events: none;
-    }
-    .name-label .input {
-      background: transparent; outline: none; border: none;
-      color: #373737; font-size: 14px; width: 100%;
-    }
+    .name-label .icon { position: absolute; top: 50%; right: 0; transform: translate(-50%,-50%); color: #888; pointer-events: none; }
+    .name-label .input { background: transparent; outline: none; border: none; color: #373737; font-size: 14px; width: 100%; }
 
-    /* ─── Toast ─────────────────────────────────────────────────────────────── */
+    /* ─── Toast ──────────────────────────────────────────────────────────────── */
     #toast {
       position: fixed; bottom: 20px; left: 50%;
       transform: translateX(-50%) translateY(60px);
@@ -274,47 +222,98 @@
     }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-    /* ─── Join dialog ───────────────────────────────────────────────────────── */
+    /* ─── Overlay / dialog base ──────────────────────────────────────────────── */
     .overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.45);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 1000;
+      position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      display: flex; align-items: center; justify-content: center; z-index: 1000;
     }
     .overlay.hidden { display: none; }
     .dialog {
-      background: #fff; border-radius: 10px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      padding: 20px 24px 16px; width: 360px; max-width: 90vw;
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 16px 48px rgba(0,0,0,.22);
+      padding: 28px 28px 20px; width: 400px; max-width: 94vw;
     }
-    .dialog h2 { margin: 0 0 8px; font-size: 18px; }
-    .dialog p  { margin: 0 0 14px; font-size: 13px; color: #555; }
-    .dialog-row { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
+    .dialog h2 { margin: 0 0 6px; font-size: 20px; color: #1f2a4d; }
+    .dialog p  { margin: 0 0 18px; font-size: 13px; color: #666; }
+    .dialog-row { margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
+    .dialog-row label { font-size: 12px; color: #555; font-weight: 600; }
     .dialog-row input {
-      width: 100%; padding: 6px 8px;
-      border-radius: 6px; border: 1px solid #ccc; font-size: 14px;
+      width: 100%; padding: 8px 10px;
+      border-radius: 7px; border: 1.5px solid #ccc; font-size: 14px;
+      transition: border-color .15s;
     }
+    .dialog-row input:focus { outline: none; border-color: #007bff; }
     .dialog-row input.error { border-color: #e24b4a; }
-    .dialog-row .error-msg { font-size: 11px; color: #e24b4a; min-height: 14px; }
-    .avatar-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .error-msg { font-size: 11px; color: #e24b4a; min-height: 14px; }
+    .avatar-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
     .avatar-option {
-      width: 40px; height: 40px; border-radius: 50%; overflow: hidden;
-      border: 2px solid transparent; cursor: pointer;
+      width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
+      border: 2.5px solid transparent; cursor: pointer;
       transition: border-color .15s, box-shadow .15s;
     }
     .avatar-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .avatar-option.selected {
-      border-color: #007bff;
-      box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+    .avatar-option.selected { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,123,255,.2); }
+    .dialog-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+
+    /* ─── Step 1: Create or Join choice ─────────────────────────────────────── */
+    .choice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 4px 0 8px;
     }
-    .dialog-footer { display: flex; justify-content: flex-end; margin-top: 6px; }
+    .choice-card {
+      border: 2px solid #e0e3ef; border-radius: 12px;
+      padding: 20px 14px; cursor: pointer; text-align: center;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+      background: #fafbff;
+    }
+    .choice-card:hover { border-color: #007bff; background: #f0f5ff; box-shadow: 0 4px 12px rgba(0,100,255,.1); }
+    .choice-card.selected { border-color: #0050b3; background: #eef3ff; box-shadow: 0 4px 14px rgba(0,80,179,.15); }
+    .choice-icon { font-size: 28px; margin-bottom: 6px; }
+    .choice-label { font-size: 14px; font-weight: 700; color: #1f2a4d; }
+    .choice-sub   { font-size: 11px; color: #777; margin-top: 3px; }
+
+    /* ─── Share modal ────────────────────────────────────────────────────────── */
+    .share-modal .share-url-row {
+      display: flex; gap: 8px; align-items: center; margin-top: 4px;
+    }
+    .share-modal .share-url-row input {
+      flex: 1; padding: 8px 10px; border-radius: 7px;
+      border: 1.5px solid #ccc; font-size: 13px;
+      background: #f8f8fb; color: #333;
+    }
+    .share-modal .share-url-row button {
+      flex-shrink: 0; padding: 8px 14px;
+      border-radius: 7px; border: none;
+      background: #0050b3; color: #fff;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background .15s;
+    }
+    .share-modal .share-url-row button:hover { background: #003d8a; }
+    .share-modal .room-id-display {
+      font-size: 28px; font-weight: 800; color: #0050b3;
+      letter-spacing: 3px; text-align: center;
+      background: #eef3ff; border-radius: 10px;
+      padding: 14px; margin: 10px 0;
+      border: 2px dashed #a0b8e8;
+    }
+    .share-modal .share-hint {
+      font-size: 12px; color: #888; text-align: center; margin-top: 6px;
+    }
   </style>
 </head>
 <body>
 
 <header>
   <h1>Planning Poker</h1>
-  <span id="roomLabel"></span>
+  <div class="header-right">
+    <span class="room-chip" id="roomLabel"></span>
+    <button class="share-btn" id="shareBtnHeader" type="button" title="Share room">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+      </svg>
+      Share Room
+    </button>
+  </div>
 </header>
 
 <main>
@@ -336,35 +335,26 @@
   <div class="status" id="statusText" role="status" aria-live="polite">Connecting…</div>
 
   <div class="middle-layout">
-
-    <!-- Left: participants -->
     <div class="participants-panel" aria-label="Participants">
       <h3>Participants</h3>
       <div class="participants-list" id="participantsList"></div>
     </div>
 
-    <!-- Center: table + buttons + summary -->
     <div class="center-panel">
       <div class="table-container" role="img" aria-label="Voting table">
-        <div class="table-circle">
-          <span id="tableAverage"></span>
-        </div>
+        <div class="table-circle"><span id="tableAverage"></span></div>
         <div class="seats-layer" id="seatsLayer"></div>
       </div>
-
       <div class="center-buttons">
         <button id="revealBtn" class="action-button" type="button">Reveal</button>
         <button id="resetBtn"  class="action-button secondary" type="button">Reset</button>
       </div>
-
       <div class="summary" id="summaryText" aria-live="polite"></div>
     </div>
 
-    <!-- Right: backlog -->
     <div class="backlog-panel" aria-label="Backlog">
       <h3>Backlog</h3>
       <div class="backlog-list" id="backlogList"></div>
-
       <div class="backlog-input">
         <label for="itemsInput">Items (one per line)</label>
         <textarea id="itemsInput" placeholder="Story 1&#10;Story 2&#10;Story 3"></textarea>
@@ -385,22 +375,105 @@
 
 <div id="toast" role="alert" aria-live="assertive"></div>
 
-<!-- Join dialog -->
-<div id="nameAvatarOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+<!-- ═══════════════════════════════════════════════════════════
+     STEP 1 — Create or Join
+════════════════════════════════════════════════════════════ -->
+<div id="choiceOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="choiceTitle">
   <div class="dialog">
-    <h2 id="dialogTitle">Welcome to Planning Poker</h2>
-    <p>Choose a name and avatar, then press Enter or click Continue.</p>
+    <h2 id="choiceTitle">Welcome to Planning Poker 🃏</h2>
+    <p>Get started by creating a new room or joining an existing one.</p>
+    <div class="choice-grid">
+      <div class="choice-card" id="choiceCreate" role="button" tabindex="0" aria-label="Create a new room">
+        <div class="choice-icon">✨</div>
+        <div class="choice-label">Create Room</div>
+        <div class="choice-sub">Start a new session</div>
+      </div>
+      <div class="choice-card" id="choiceJoin" role="button" tabindex="0" aria-label="Join an existing room">
+        <div class="choice-icon">🔗</div>
+        <div class="choice-label">Join Room</div>
+        <div class="choice-sub">Enter a room code</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STEP 2a — Create: name + avatar (room auto-generated)
+════════════════════════════════════════════════════════════ -->
+<div id="createOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="createTitle">
+  <div class="dialog">
+    <h2 id="createTitle">Create a Room</h2>
+    <p>Choose a name and avatar. A room code will be generated for you.</p>
     <div class="dialog-row">
-      <label for="dialogNameInput">Name</label>
-      <input id="dialogNameInput" type="text" placeholder="e.g. Alex" maxlength="64" autocomplete="nickname" />
-      <span class="error-msg" id="nameError"></span>
+      <label for="createNameInput">Your name</label>
+      <input id="createNameInput" type="text" placeholder="e.g. Alex" maxlength="64" autocomplete="nickname" />
+      <span class="error-msg" id="createNameError"></span>
     </div>
     <div class="dialog-row">
       <label>Avatar</label>
-      <div id="avatarGrid" class="avatar-grid" role="radiogroup" aria-label="Choose an avatar"></div>
+      <div id="createAvatarGrid" class="avatar-grid" role="radiogroup" aria-label="Choose an avatar"></div>
     </div>
     <div class="dialog-footer">
-      <button id="dialogConfirmBtn" class="btn btn-primary btn-sm" type="button">Continue</button>
+      <button id="createBackBtn"    class="action-button secondary" type="button" style="min-width:5rem;">← Back</button>
+      <button id="createConfirmBtn" class="action-button"           type="button">Create &amp; Enter</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STEP 2b — Join: room code + name + avatar
+════════════════════════════════════════════════════════════ -->
+<div id="joinOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="joinTitle">
+  <div class="dialog">
+    <h2 id="joinTitle">Join a Room</h2>
+    <p>Enter the room code shared with you, then choose a name and avatar.</p>
+    <div class="dialog-row">
+      <label for="joinRoomInput">Room code</label>
+      <input id="joinRoomInput" type="text" placeholder="e.g. team1" maxlength="64"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <span class="error-msg" id="joinRoomError"></span>
+    </div>
+    <div class="dialog-row">
+      <label for="joinNameInput">Your name</label>
+      <input id="joinNameInput" type="text" placeholder="e.g. Alex" maxlength="64" autocomplete="nickname" />
+      <span class="error-msg" id="joinNameError"></span>
+    </div>
+    <div class="dialog-row">
+      <label>Avatar</label>
+      <div id="joinAvatarGrid" class="avatar-grid" role="radiogroup" aria-label="Choose an avatar"></div>
+    </div>
+    <div class="dialog-footer">
+      <button id="joinBackBtn"    class="action-button secondary" type="button" style="min-width:5rem;">← Back</button>
+      <button id="joinConfirmBtn" class="action-button"           type="button">Join Room</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     Share modal
+════════════════════════════════════════════════════════════ -->
+<div id="shareOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+  <div class="dialog share-modal" style="max-width:440px;">
+    <h2 id="shareTitle">Share this Room</h2>
+    <p>Send the link or the room code to your teammates.</p>
+
+    <div class="dialog-row">
+      <label>Room code</label>
+      <div class="room-id-display" id="shareRoomCode"></div>
+    </div>
+
+    <div class="dialog-row">
+      <label>Invite link</label>
+      <div class="share-url-row">
+        <input id="shareUrlInput" type="text" readonly aria-label="Room invite link" />
+        <button id="copyLinkBtn" type="button">Copy</button>
+      </div>
+    </div>
+
+    <p class="share-hint">Anyone with the link or code can join this room.</p>
+
+    <div class="dialog-footer">
+      <button id="shareCloseBtn" class="action-button secondary" type="button" style="min-width:5rem;">Close</button>
     </div>
   </div>
 </div>
@@ -409,22 +482,47 @@
 <script>
 "use strict";
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const FIB_CARDS = ["0", "0.5", "1", "2", "3", "5", "8", "13", "20", "40", "100", "?"];
-
+const FIB_CARDS   = ["0","0.5","1","2","3","5","8","13","20","40","100","?"];
 const AVATAR_FILES = [
-  "/avatars/avatar1.jpg",
-  "/avatars/avatar2.jpg",
-  "/avatars/avatar3.jpg",
-  "/avatars/avatar4.jpg",
-  "/avatars/avatar5.jpg",
-  "/avatars/avatar6.jpg",
+  "/avatars/avatar1.jpg","/avatars/avatar2.jpg","/avatars/avatar3.jpg",
+  "/avatars/avatar4.jpg","/avatars/avatar5.jpg","/avatars/avatar6.jpg",
 ];
 
-// ─── DOM refs ──────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const $ = (id) => document.getElementById(id);
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function generateRoomId() {
+  // 6-char alphanumeric code, e.g. "k7xq2m"
+  return Math.random().toString(36).slice(2, 8);
+}
+
+function getRoomIdFromUrl() {
+  return window.location.hash.replace("#","").trim() || null;
+}
+
+function setRoomInUrl(roomId) {
+  window.history.replaceState(null, "", "#" + roomId);
+}
+
+let toastTimer = null;
+function showToast(msg, ms = 2800) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), ms);
+}
+
+// ─── DOM refs ─────────────────────────────────────────────────────────────────
 
 const roomLabel        = $("roomLabel");
 const roomNameDisplay  = $("roomNameDisplay");
@@ -443,54 +541,218 @@ const prevItemBtn      = $("prevItemBtn");
 const nextItemBtn      = $("nextItemBtn");
 const backlogList      = $("backlogList");
 const itemIndexLabel   = $("itemIndexLabel");
-const overlay          = $("nameAvatarOverlay");
-const dialogNameInput  = $("dialogNameInput");
-const avatarGrid       = $("avatarGrid");
-const dialogConfirmBtn = $("dialogConfirmBtn");
-const nameError        = $("nameError");
-const toast            = $("toast");
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// overlays
+const choiceOverlay  = $("choiceOverlay");
+const createOverlay  = $("createOverlay");
+const joinOverlay    = $("joinOverlay");
+const shareOverlay   = $("shareOverlay");
 
-const ROOM_ID = (window.location.hash.replace("#", "").trim()) || "default-room";
+// ─── Session state ────────────────────────────────────────────────────────────
 
+let ROOM_ID          = getRoomIdFromUrl();   // null until chosen
 let socket           = null;
 let currentState     = { revealed: false, votes: {} };
 let myCurrentVote    = null;
-let myAvatarIndex    = 0;
-let myName           = "";         // set on confirmDialog; used for reconnect
-let myAvatarUrl      = "";         // set on confirmDialog; used for reconnect
-let hasJoined        = false;      // true after the first confirmDialog
+let myAvatarIndexCreate = 0;
+let myAvatarIndexJoin   = 0;
+let myName           = "";
+let myAvatarUrl      = "";
+let hasJoined        = false;
 let items            = [];
 let currentItemIndex = -1;
-let toastTimer       = null;
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// ─── Avatar grids ─────────────────────────────────────────────────────────────
 
-function getMyAvatarUrl() {
-  return AVATAR_FILES[myAvatarIndex] ?? AVATAR_FILES[0];
+function buildAvatarGrid(containerId, getIndex, setIndex) {
+  const container = $(containerId);
+  container.innerHTML = "";
+  AVATAR_FILES.forEach((url, index) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "avatar-option" + (index === 0 ? " selected" : "");
+    wrapper.setAttribute("role",         "radio");
+    wrapper.setAttribute("aria-checked", index === 0 ? "true" : "false");
+    wrapper.setAttribute("tabindex",     index === 0 ? "0" : "-1");
+    wrapper.setAttribute("aria-label",   `Avatar ${index + 1}`);
+    const img = document.createElement("img");
+    img.src = url; img.alt = "";
+    wrapper.appendChild(img);
+    const select = () => {
+      setIndex(index);
+      container.querySelectorAll(".avatar-option").forEach((opt, i) => {
+        const active = i === index;
+        opt.classList.toggle("selected", active);
+        opt.setAttribute("aria-checked", active ? "true" : "false");
+        opt.setAttribute("tabindex",     active ? "0"    : "-1");
+      });
+    };
+    wrapper.addEventListener("click",   select);
+    wrapper.addEventListener("keydown", (e) => { if (e.key==="Enter"||e.key===" ") select(); });
+    container.appendChild(wrapper);
+  });
 }
 
-function parseVoteEntry(info) {
-  if (info && typeof info === "object") {
-    return { value: info.value ?? "", avatar: info.avatar ?? AVATAR_FILES[0] };
+// ─── Flow: Step 1 — Create or Join choice ────────────────────────────────────
+
+function showChoiceScreen() {
+  choiceOverlay.classList.remove("hidden");
+  createOverlay.classList.add("hidden");
+  joinOverlay.classList.add("hidden");
+  shareOverlay.classList.add("hidden");
+}
+
+$("choiceCreate").addEventListener("click", () => {
+  choiceOverlay.classList.add("hidden");
+  createOverlay.classList.remove("hidden");
+  $("createNameInput").focus();
+});
+$("choiceJoin").addEventListener("click", () => {
+  choiceOverlay.classList.add("hidden");
+  joinOverlay.classList.remove("hidden");
+  $("joinRoomInput").focus();
+});
+
+// Keyboard nav on choice cards
+["choiceCreate","choiceJoin"].forEach((id) => {
+  $(id).addEventListener("keydown", (e) => {
+    if (e.key==="Enter"||e.key===" ") { e.preventDefault(); $(id).click(); }
+  });
+});
+
+// ─── Flow: Step 2a — Create Room ─────────────────────────────────────────────
+
+$("createBackBtn").addEventListener("click", () => {
+  createOverlay.classList.add("hidden");
+  showChoiceScreen();
+});
+
+$("createConfirmBtn").addEventListener("click", confirmCreate);
+$("createNameInput").addEventListener("keydown", (e) => {
+  if (e.key==="Enter") { e.preventDefault(); confirmCreate(); }
+});
+
+function confirmCreate() {
+  const rawName = $("createNameInput").value.trim();
+  if (!rawName) {
+    $("createNameError").textContent = "Please enter your name.";
+    $("createNameInput").classList.add("error");
+    $("createNameInput").focus();
+    return;
   }
-  return { value: String(info ?? ""), avatar: AVATAR_FILES[0] };
+  $("createNameError").textContent = "";
+  $("createNameInput").classList.remove("error");
+
+  // Generate a fresh room ID and push it to the URL
+  ROOM_ID = generateRoomId();
+  setRoomInUrl(ROOM_ID);
+
+  myName      = rawName.slice(0, 64);
+  myAvatarUrl = AVATAR_FILES[myAvatarIndexCreate] ?? AVATAR_FILES[0];
+  hasJoined   = true;
+
+  nameInput.value = myName;
+  updateRoomDisplay();
+
+  createOverlay.classList.add("hidden");
+  joinRoom();
+  statusText.textContent = "Room created! Pick a card to cast your vote.";
+
+  // Auto-open share modal so the host can immediately share
+  openShareModal();
 }
 
-function showToast(msg, durationMs = 2800) {
-  toast.textContent = msg;
-  toast.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove("show"), durationMs);
+// ─── Flow: Step 2b — Join Room ───────────────────────────────────────────────
+
+$("joinBackBtn").addEventListener("click", () => {
+  joinOverlay.classList.add("hidden");
+  showChoiceScreen();
+});
+
+$("joinConfirmBtn").addEventListener("click", confirmJoin);
+["joinRoomInput","joinNameInput"].forEach((id) => {
+  $(id).addEventListener("keydown", (e) => {
+    if (e.key==="Enter") { e.preventDefault(); confirmJoin(); }
+  });
+});
+
+function confirmJoin() {
+  const rawRoom = $("joinRoomInput").value.trim();
+  const rawName = $("joinNameInput").value.trim();
+  let valid = true;
+
+  if (!rawRoom) {
+    $("joinRoomError").textContent = "Please enter a room code.";
+    $("joinRoomInput").classList.add("error");
+    valid = false;
+  } else {
+    $("joinRoomError").textContent = "";
+    $("joinRoomInput").classList.remove("error");
+  }
+
+  if (!rawName) {
+    $("joinNameError").textContent = "Please enter your name.";
+    $("joinNameInput").classList.add("error");
+    if (valid) $("joinNameInput").focus();
+    valid = false;
+  } else {
+    $("joinNameError").textContent = "";
+    $("joinNameInput").classList.remove("error");
+  }
+
+  if (!valid) return;
+
+  ROOM_ID     = rawRoom.slice(0, 64);
+  myName      = rawName.slice(0, 64);
+  myAvatarUrl = AVATAR_FILES[myAvatarIndexJoin] ?? AVATAR_FILES[0];
+  hasJoined   = true;
+
+  setRoomInUrl(ROOM_ID);
+  nameInput.value = myName;
+  updateRoomDisplay();
+
+  joinOverlay.classList.add("hidden");
+  joinRoom();
+  statusText.textContent = "Joined room! Pick a card to cast your vote.";
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+// ─── Share modal ──────────────────────────────────────────────────────────────
+
+function openShareModal() {
+  if (!ROOM_ID) return;
+  const url = window.location.origin + window.location.pathname + "#" + ROOM_ID;
+  $("shareRoomCode").textContent  = ROOM_ID.toUpperCase();
+  $("shareUrlInput").value        = url;
+  shareOverlay.classList.remove("hidden");
+}
+
+$("shareBtnHeader").addEventListener("click", openShareModal);
+$("shareCloseBtn").addEventListener("click",  () => shareOverlay.classList.add("hidden"));
+
+$("copyLinkBtn").addEventListener("click", () => {
+  const input = $("shareUrlInput");
+  navigator.clipboard.writeText(input.value).then(() => {
+    showToast("Invite link copied to clipboard! 🎉");
+    $("copyLinkBtn").textContent = "Copied!";
+    setTimeout(() => { $("copyLinkBtn").textContent = "Copy"; }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    input.select();
+    document.execCommand("copy");
+    showToast("Link copied!");
+  });
+});
+
+// Close share modal on backdrop click
+shareOverlay.addEventListener("click", (e) => {
+  if (e.target === shareOverlay) shareOverlay.classList.add("hidden");
+});
+
+// ─── Room display helpers ─────────────────────────────────────────────────────
+
+function updateRoomDisplay() {
+  const label = ROOM_ID ? "Room: " + ROOM_ID.toUpperCase() : "";
+  roomLabel.textContent       = label;
+  roomNameDisplay.textContent = ROOM_ID ? ROOM_ID.toUpperCase() : "—";
 }
 
 // ─── Backlog ──────────────────────────────────────────────────────────────────
@@ -502,37 +764,32 @@ function updateBacklogTiles() {
     itemIndexLabel.textContent = "";
     return;
   }
-
   const frag = document.createDocumentFragment();
-
   items.forEach((text, idx) => {
     const wrapper = document.createElement("div");
     wrapper.className = "backlog-item-tile" + (idx === currentItemIndex ? " current" : "");
-
     const card = document.createElement("div");
     card.className = "backlog-card";
-    card.setAttribute("role", "button");
-    card.setAttribute("tabindex", "0");
+    card.setAttribute("role",       "button");
+    card.setAttribute("tabindex",   "0");
     card.setAttribute("aria-label", `Select item: ${text}`);
     card.innerHTML = `
       <div class="card__title">${escapeHtml(text)}</div>
-      <div class="card__date">Item ${idx + 1} of ${items.length}</div>
+      <div class="card__date">Item ${idx+1} of ${items.length}</div>
       <div class="card__arrow">
         <svg height="14" width="14" viewBox="0 0 24 24" aria-hidden="true">
           <path fill="#fff" d="M12 4l1.41 1.41L8.83 10H20v2H8.83l4.58 4.59L12 18l-8-8z"/>
         </svg>
       </div>`;
-
     const activate = () => goToItem(idx);
-    card.addEventListener("click", activate);
-    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") activate(); });
+    card.addEventListener("click",   activate);
+    card.addEventListener("keydown", (e) => { if(e.key==="Enter"||e.key===" ") activate(); });
     wrapper.appendChild(card);
     frag.appendChild(wrapper);
   });
-
   backlogList.appendChild(frag);
   itemIndexLabel.textContent = currentItemIndex >= 0
-    ? `Item ${currentItemIndex + 1} of ${items.length}` : "";
+    ? `Item ${currentItemIndex+1} of ${items.length}` : "";
 }
 
 function goToItem(newIndex) {
@@ -541,18 +798,15 @@ function goToItem(newIndex) {
 }
 
 loadItemsBtn.addEventListener("click", () => {
-  const parsed = (itemsInput.value || "")
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 200);
+  const parsed = (itemsInput.value||"")
+    .split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(0,200);
   if (!parsed.length) { showToast("No items found in the textarea."); return; }
   socket?.emit("setBacklog", { items: parsed, currentIndex: 0 });
-  showToast(`${parsed.length} item${parsed.length > 1 ? "s" : ""} loaded and synced.`);
+  showToast(`${parsed.length} item${parsed.length>1?"s":""} loaded and synced.`);
 });
 
-prevItemBtn.addEventListener("click", () => goToItem(currentItemIndex - 1));
-nextItemBtn.addEventListener("click", () => goToItem(currentItemIndex + 1));
+prevItemBtn.addEventListener("click", () => goToItem(currentItemIndex-1));
+nextItemBtn.addEventListener("click", () => goToItem(currentItemIndex+1));
 
 // ─── Cards ────────────────────────────────────────────────────────────────────
 
@@ -564,11 +818,11 @@ function renderCards() {
     div.className = "vote-card";
     div.textContent = val;
     div.dataset.value = val;
-    div.setAttribute("role", "button");
-    div.setAttribute("tabindex", "0");
+    div.setAttribute("role",       "button");
+    div.setAttribute("tabindex",   "0");
     div.setAttribute("aria-label", `Vote ${val}`);
     div.addEventListener("click",   () => handleVote(val));
-    div.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") handleVote(val); });
+    div.addEventListener("keydown", (e) => { if(e.key==="Enter"||e.key===" ") handleVote(val); });
     frag.appendChild(div);
   });
   cardsContainer.appendChild(frag);
@@ -585,78 +839,65 @@ function syncCardState() {
   });
 }
 
-// ─── Seats — dynamically scaled for any participant count ─────────────────────
+// ─── Seats ────────────────────────────────────────────────────────────────────
+
+function parseVoteEntry(info) {
+  if (info && typeof info === "object")
+    return { value: info.value ?? "", avatar: info.avatar ?? AVATAR_FILES[0] };
+  return { value: String(info ?? ""), avatar: AVATAR_FILES[0] };
+}
 
 function renderSeats() {
   seatsLayer.innerHTML = "";
   const entries = Object.entries(currentState.votes || {});
   if (!entries.length) return;
-
-  entries.sort(([a], [b]) => a.localeCompare(b));
-
+  entries.sort(([a],[b]) => a.localeCompare(b));
   const count = entries.length;
-
-  // Scale seat size and orbit radius down as more people join.
-  // Up to 8 people: full size. 9-16: shrink. 17+: shrink more.
-  const seatWidth  = count <= 8 ? 100 : count <= 16 ? 76 : 58;
-  const layerSize  = count <= 8 ? 420 : count <= 16 ? 460 : 500;
-  const orbitR     = count <= 8 ? 190 : count <= 16 ? 210 : 230;
-
+  const seatWidth = count <= 8 ? 100 : count <= 16 ? 76 : 58;
+  const layerSize = count <= 8 ? 420 : count <= 16 ? 460 : 500;
+  const orbitR    = count <= 8 ? 190 : count <= 16 ? 210 : 230;
   seatsLayer.style.width  = layerSize + "px";
   seatsLayer.style.height = layerSize + "px";
-
-  const cx = layerSize / 2;
-  const cy = layerSize / 2;
-
+  const cx = layerSize / 2, cy = layerSize / 2;
   const frag = document.createDocumentFragment();
-
   entries.forEach(([name, info], i) => {
     const { value, avatar } = parseVoteEntry(info);
     const angle = (2 * Math.PI * i) / count - Math.PI / 2;
-
     const seat = document.createElement("div");
     seat.className = "seat";
     seat.style.setProperty("--seat-width", seatWidth + "px");
     seat.style.left = (cx + orbitR * Math.cos(angle)) + "px";
     seat.style.top  = (cy + orbitR * Math.sin(angle)) + "px";
-
     const hasVoted = Boolean(value);
-    let valueCls = "seat-value";
-    let valueText;
+    let valueCls = "seat-value", valueText;
     if (!currentState.revealed) {
       valueCls += hasVoted ? " voted-hidden" : " hidden";
       valueText = hasVoted ? "●" : "–";
     } else {
       valueText = value || "–";
     }
-
     seat.innerHTML = `
       <div class="seat-card">
-        <div class="seat-avatar"><img src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}'s avatar" loading="lazy" /></div>
+        <div class="seat-avatar"><img src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}'s avatar" loading="lazy"/></div>
         <div class="seat-name">${escapeHtml(name)}</div>
         <div class="${valueCls}">${escapeHtml(valueText)}</div>
       </div>`;
-
     frag.appendChild(seat);
   });
-
   seatsLayer.appendChild(frag);
 }
 
-// ─── Participants tiles ───────────────────────────────────────────────────────
+// ─── Participants ─────────────────────────────────────────────────────────────
 
 function renderParticipantsTiles() {
   participantsList.innerHTML = "";
   const entries = Object.entries(currentState.votes || {});
-  entries.sort(([a], [b]) => a.localeCompare(b));
-
+  entries.sort(([a],[b]) => a.localeCompare(b));
   if (!entries.length) {
     participantsList.innerHTML = "<div style='font-size:11px;color:#777;'>No participants yet.</div>";
     return;
   }
-
   const frag = document.createDocumentFragment();
-
   entries.forEach(([name, info]) => {
     const { value, avatar } = parseVoteEntry(info);
     let valText, valColor;
@@ -667,48 +908,40 @@ function renderParticipantsTiles() {
       valText  = value || "–";
       valColor = "#333";
     }
-
     const tile = document.createElement("div");
     tile.className = "participant-tile";
     tile.innerHTML = `
       <div class="participant-left">
-        <div class="participant-avatar"><img src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}'s avatar" loading="lazy" /></div>
+        <div class="participant-avatar"><img src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}'s avatar" loading="lazy"/></div>
         <span class="participant-name">${escapeHtml(name)}</span>
       </div>
       <span class="participant-val" style="color:${valColor}">${escapeHtml(valText)}</span>`;
-
     frag.appendChild(tile);
   });
-
   participantsList.appendChild(frag);
 }
 
-// ─── Status & summary ─────────────────────────────────────────────────────────
+// ─── Summary ──────────────────────────────────────────────────────────────────
 
 function updateStatusAndSummary() {
   const entries    = Object.entries(currentState.votes || {});
   const total      = entries.length;
-  const votedCount = entries.filter(([, info]) => Boolean(parseVoteEntry(info).value)).length;
-
+  const votedCount = entries.filter(([,info]) => Boolean(parseVoteEntry(info).value)).length;
   if (!currentState.revealed) {
-    statusText.textContent = total
+    statusText.textContent  = total
       ? `${votedCount} of ${total} voted. Click "Reveal" when everyone's done.`
       : "No votes yet. Pick a card to cast your vote.";
-    summaryText.textContent  = "";
-    tableAverage.textContent = "";
+    summaryText.textContent = tableAverage.textContent = "";
     revealBtn.disabled = total === 0;
     return;
   }
-
-  statusText.textContent = `Revealed — ${total} participant${total !== 1 ? "s" : ""}.`;
+  statusText.textContent = `Revealed — ${total} participant${total!==1?"s":""}.`;
   const numerics = entries
-    .map(([, info]) => parseFloat(parseVoteEntry(info).value))
-    .filter((n) => Number.isFinite(n));
-
+    .map(([,info]) => parseFloat(parseVoteEntry(info).value))
+    .filter(n => Number.isFinite(n));
   if (numerics.length) {
-    const min = Math.min(...numerics);
-    const max = Math.max(...numerics);
-    const avg = numerics.reduce((a, b) => a + b, 0) / numerics.length;
+    const min = Math.min(...numerics), max = Math.max(...numerics);
+    const avg = numerics.reduce((a,b)=>a+b,0) / numerics.length;
     summaryText.textContent  = `Min: ${min} | Max: ${max} | Avg: ${avg.toFixed(2)}`;
     tableAverage.textContent = avg.toFixed(2);
   } else {
@@ -716,8 +949,6 @@ function updateStatusAndSummary() {
     tableAverage.textContent = "";
   }
 }
-
-// ─── Master render ────────────────────────────────────────────────────────────
 
 function renderAll() {
   syncCardState();
@@ -734,10 +965,8 @@ function handleVote(value) {
   syncCardState();
   socket?.emit("vote", value);
 }
-
 function handleReveal() { socket?.emit("reveal"); }
-
-function handleReset() {
+function handleReset()  {
   myCurrentVote = null;
   syncCardState();
   socket?.emit("reset");
@@ -746,7 +975,7 @@ function handleReset() {
 // ─── Socket ───────────────────────────────────────────────────────────────────
 
 function joinRoom() {
-  if (!socket || !hasJoined) return;
+  if (!socket || !hasJoined || !ROOM_ID) return;
   socket.emit("joinRoom", { roomId: ROOM_ID, name: myName, avatar: myAvatarUrl });
 }
 
@@ -754,14 +983,12 @@ function connectSocket() {
   socket = io({ reconnectionDelay: 1000, reconnectionDelayMax: 5000 });
 
   socket.on("connect", () => {
-    // On every (re)connect, rejoin the room if the user has already identified.
-    // This handles Render spin-down restarts and network blips transparently.
     if (hasJoined) {
       joinRoom();
       statusText.textContent = "Reconnected — rejoined room.";
       showToast("Reconnected.");
     } else {
-      statusText.textContent = "Connected. Enter your name and avatar to start.";
+      statusText.textContent = "Connected.";
     }
   });
 
@@ -773,7 +1000,6 @@ function connectSocket() {
     statusText.textContent = "Connection error — retrying…";
   });
 
-  // Server sends this before a graceful shutdown (SIGTERM/SIGINT)
   socket.on("serverShutdown", (msg) => {
     showToast(msg || "Server restarting — please refresh shortly.", 8000);
     statusText.textContent = "⚠ Server is restarting…";
@@ -785,7 +1011,6 @@ function connectSocket() {
 
   socket.on("stateUpdate", (state) => {
     currentState = state ?? { revealed: false, votes: {} };
-    // Sync local vote if server cleared it (reset / item navigation)
     const myEntry = currentState.votes[myName];
     if (!myEntry || !parseVoteEntry(myEntry).value) myCurrentVote = null;
     renderAll();
@@ -798,85 +1023,36 @@ function connectSocket() {
   });
 }
 
-// ─── Join dialog ──────────────────────────────────────────────────────────────
-
-function confirmDialog() {
-  const rawName = dialogNameInput.value.trim();
-  if (!rawName) {
-    nameError.textContent = "Please enter a name.";
-    dialogNameInput.classList.add("error");
-    dialogNameInput.focus();
-    return;
-  }
-
-  nameError.textContent = "";
-  dialogNameInput.classList.remove("error");
-
-  myName      = rawName.slice(0, 64);
-  myAvatarUrl = getMyAvatarUrl();
-  hasJoined   = true;
-
-  nameInput.value = myName;
-
-  joinRoom(); // uses the stored name + avatar
-
-  overlay.classList.add("hidden");
-  statusText.textContent = "Pick a card to cast your vote.";
-}
-
-function buildAvatarGrid() {
-  avatarGrid.innerHTML = "";
-  AVATAR_FILES.forEach((url, index) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "avatar-option" + (index === 0 ? " selected" : "");
-    wrapper.setAttribute("role",         "radio");
-    wrapper.setAttribute("aria-checked", index === 0 ? "true" : "false");
-    wrapper.setAttribute("tabindex",     index === 0 ? "0" : "-1");
-    wrapper.setAttribute("aria-label",   `Avatar ${index + 1}`);
-
-    const img = document.createElement("img");
-    img.src = url; img.alt = "";
-    wrapper.appendChild(img);
-
-    const select = () => {
-      myAvatarIndex = index;
-      document.querySelectorAll(".avatar-option").forEach((opt, i) => {
-        const active = i === myAvatarIndex;
-        opt.classList.toggle("selected",  active);
-        opt.setAttribute("aria-checked",  active ? "true" : "false");
-        opt.setAttribute("tabindex",      active ? "0" : "-1");
-      });
-    };
-
-    wrapper.addEventListener("click",   select);
-    wrapper.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") select(); });
-    avatarGrid.appendChild(wrapper);
-  });
-}
-
-// ─── Event wiring ─────────────────────────────────────────────────────────────
-
-dialogConfirmBtn.addEventListener("click", confirmDialog);
-dialogNameInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") { e.preventDefault(); confirmDialog(); }
-});
-overlay.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !overlay.classList.contains("hidden")) {
-    e.preventDefault(); confirmDialog();
-  }
-});
+// ─── Init ─────────────────────────────────────────────────────────────────────
 
 revealBtn.addEventListener("click", handleReveal);
 resetBtn.addEventListener("click",  handleReset);
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-
-roomLabel.textContent       = "Room: " + ROOM_ID;
-roomNameDisplay.textContent = ROOM_ID;
-
 window.addEventListener("load", () => {
-  buildAvatarGrid();
-  dialogNameInput.focus();
+  // Build avatar grids for both flows
+  buildAvatarGrid(
+    "createAvatarGrid",
+    () => myAvatarIndexCreate,
+    (i) => { myAvatarIndexCreate = i; }
+  );
+  buildAvatarGrid(
+    "joinAvatarGrid",
+    () => myAvatarIndexJoin,
+    (i) => { myAvatarIndexJoin = i; }
+  );
+
+  // If URL already has a room hash, pre-fill the join code and skip to join flow
+  const existingRoom = getRoomIdFromUrl();
+  if (existingRoom) {
+    $("joinRoomInput").value = existingRoom;
+    choiceOverlay.classList.add("hidden");
+    joinOverlay.classList.remove("hidden");
+    $("joinNameInput").focus();
+  } else {
+    showChoiceScreen();
+  }
+
+  updateRoomDisplay();
 });
 
 renderCards();
