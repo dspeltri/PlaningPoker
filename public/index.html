@@ -4,370 +4,649 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Planning Poker</title>
-
-  <link
-    rel="stylesheet"
-    href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-    integrity="sha384-Gn5384xqQ1aoWXA+058RPXCjv3H9MJZ4lZrZ9Vx4U5YkN0hQ5G5qV6U5qv5S22nB"
-    crossorigin="anonymous"
-  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
+    /* ─── Design tokens ──────────────────────────────────────────────────────── */
+    :root {
+      --bg:          #0d0f14;
+      --surface:     #13161e;
+      --surface2:    #1a1e2a;
+      --surface3:    #222738;
+      --border:      rgba(255,255,255,.07);
+      --border-hi:   rgba(255,255,255,.14);
+      --accent:      #f5c842;
+      --accent-dim:  rgba(245,200,66,.15);
+      --accent-glow: rgba(245,200,66,.35);
+      --text:        #e8eaf0;
+      --text-muted:  #6b7080;
+      --text-dim:    #9499a8;
+      --green:       #34d399;
+      --green-dim:   rgba(52,211,153,.12);
+      --red:         #f87171;
+      --blue:        #60a5fa;
+      --blue-dim:    rgba(96,165,250,.12);
+      --radius-sm:   6px;
+      --radius-md:   12px;
+      --radius-lg:   18px;
+      --radius-xl:   24px;
+      --font-head:   'Syne', sans-serif;
+      --font-mono:   'DM Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
 
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      margin: 0; padding: 0;
-      background: #f4f5f7; color: #222;
-      display: flex; flex-direction: column; min-height: 100vh;
+      font-family: var(--font-head);
+      background: var(--bg);
+      color: var(--text);
+      display: flex; flex-direction: column;
+      min-height: 100vh;
+      /* Subtle dot-grid texture */
+      background-image: radial-gradient(circle, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size: 28px 28px;
     }
+
+    /* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
 
     /* ─── Header ─────────────────────────────────────────────────────────────── */
     header {
-      background: #0050b3; color: white;
-      padding: 10px 20px;
+      background: rgba(13,15,20,.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 58px;
       display: flex; align-items: center; justify-content: space-between;
-    }
-    header h1 { margin: 0; font-size: 18px; }
-    .header-right { display: flex; align-items: center; gap: 10px; }
-    header .room-chip {
-      font-size: 12px; opacity: .9;
-      background: rgba(255,255,255,.15);
-      border-radius: 20px; padding: 3px 10px;
-      letter-spacing: .3px;
+      position: sticky; top: 0; z-index: 100;
     }
 
-    /* Share button in header */
+    .header-logo {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; line-height: 1;
+      box-shadow: 0 0 16px var(--accent-glow);
+      flex-shrink: 0;
+    }
+    header h1 {
+      font-family: var(--font-head);
+      font-size: 17px; font-weight: 800;
+      letter-spacing: -.3px; color: var(--text);
+    }
+
+    .header-right { display: flex; align-items: center; gap: 8px; }
+
+    .room-chip {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      letter-spacing: .5px;
+    }
+
     .share-btn {
-      display: inline-flex; align-items: center; gap: 5px;
-      background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35);
-      color: #fff; border-radius: 20px;
-      padding: 4px 12px; font-size: 12px; font-weight: 600;
-      cursor: pointer; transition: background .15s;
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(245,200,66,.3);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-family: var(--font-head);
+      font-size: 12px; font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, box-shadow .2s;
       white-space: nowrap;
     }
-    .share-btn:hover { background: rgba(255,255,255,.28); }
-    .share-btn svg { flex-shrink: 0; }
+    .share-btn:hover {
+      background: rgba(245,200,66,.22);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
 
     /* ─── Main ───────────────────────────────────────────────────────────────── */
     main {
-      flex: 1; padding: 12px 40px 16px;
-      display: flex; flex-direction: column; gap: 10px;
+      flex: 1; padding: 16px 28px 20px;
+      display: flex; flex-direction: column; gap: 12px;
     }
-    @media (max-width: 700px) { main { padding: 10px 12px 12px; } }
+    @media (max-width: 700px) { main { padding: 12px 14px 14px; } }
 
-    .top-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
-    .field-group { display: flex; flex-direction: column; gap: 4px; }
-    label { font-size: 12px; color: #666; }
-    textarea {
-      padding: 6px 8px; border-radius: 4px;
-      border: 1px solid #ccc; font-size: 14px;
-      resize: vertical; min-height: 80px; background: #fff;
+    /* ─── Top row ────────────────────────────────────────────────────────────── */
+    .top-row {
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
     }
-    .room-name { font-weight: 600; }
-    .status { font-size: 13px; color: #444; min-height: 18px; }
+    .field-group { display: flex; flex-direction: column; gap: 4px; }
+    .field-group > label { font-size: 10px; font-weight: 600; color: var(--text-muted); letter-spacing: .8px; text-transform: uppercase; }
+    .room-name { font-family: var(--font-mono); font-size: 14px; font-weight: 500; color: var(--accent); letter-spacing: 1px; }
+
+    .status {
+      font-size: 12px; color: var(--text-dim);
+      padding: 2px 0; min-height: 16px;
+      font-family: var(--font-mono);
+    }
+
+    textarea {
+      padding: 8px 10px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); font-size: 13px;
+      resize: vertical; min-height: 80px;
+      background: var(--surface2); color: var(--text);
+      font-family: var(--font-mono);
+      transition: border-color .2s;
+    }
+    textarea:focus { outline: none; border-color: var(--accent); }
+
+    /* ─── Name label ─────────────────────────────────────────────────────────── */
+    .name-label {
+      position: relative; display: flex; width: 200px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-hi);
+      padding: 7px 32px 7px 10px;
+      background: var(--surface2); color: var(--text);
+    }
+    .name-label .icon {
+      position: absolute; top: 50%; right: 8px;
+      transform: translateY(-50%); color: var(--text-muted);
+      pointer-events: none; font-size: 14px;
+    }
+    .name-label .input {
+      background: transparent; outline: none; border: none;
+      color: var(--text); font-size: 13px; font-family: var(--font-head);
+      font-weight: 600; width: 100%;
+    }
+    .name-label .input::placeholder { color: var(--text-muted); }
 
     /* ─── Three-column middle ────────────────────────────────────────────────── */
     .middle-layout {
       flex: 1; display: grid;
-      grid-template-columns: 260px 3fr 260px;
-      gap: 16px; margin-top: 8px; min-height: 380px;
+      grid-template-columns: 240px 1fr 240px;
+      gap: 14px; min-height: 380px;
     }
     @media (max-width: 1000px) { .middle-layout { display: flex; flex-direction: column; } }
 
-    /* ─── Participants panel ─────────────────────────────────────────────────── */
-    .participants-panel { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
-    .participants-panel h3 { margin: 0 0 4px; font-size: 13px; }
-    .participants-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
-    .participant-tile {
-      background: #fff; border-radius: 8px; border: 1px solid #cad3ff;
-      padding: 6px 8px; display: flex; justify-content: space-between; align-items: center;
-      font-size: 12px; box-shadow: 0 3px 6px rgba(0,0,0,.08);
+    /* ─── Panel base ─────────────────────────────────────────────────────────── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
     }
-    .participant-left { display: flex; align-items: center; gap: 6px; }
-    .participant-avatar { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+    .panel-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--text-muted);
+      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+
+    /* ─── Participants panel ─────────────────────────────────────────────────── */
+    .participants-list { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow-y: auto; }
+
+    .participant-tile {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: border-color .2s, background .2s;
+    }
+    .participant-tile:hover { border-color: var(--border-hi); background: var(--surface3); }
+    .participant-left { display: flex; align-items: center; gap: 8px; }
+    .participant-avatar { width: 26px; height: 26px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 1.5px solid var(--border-hi); }
     .participant-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .participant-name { font-weight: 600; color: #1f2a4d; }
-    .participant-val { font-family: monospace; font-size: 12px; color: #333; }
+    .participant-name { font-size: 12px; font-weight: 700; color: var(--text); }
+    .participant-val { font-family: var(--font-mono); font-size: 11px; }
 
     /* ─── Center panel ───────────────────────────────────────────────────────── */
     .center-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       display: flex; flex-direction: column;
-      align-items: center; justify-content: space-between; gap: 8px;
-      /* reserves space for seat cards orbiting above/below the table circle */
-      padding-top: 70px; padding-bottom: 16px;
+      align-items: center; gap: 12px;
+      padding: 80px 16px 20px;
     }
+
     .table-container {
       flex: 1; display: flex; align-items: center; justify-content: center;
-      /* min-height must be >= largest seats-layer size (500px) + seat card height (~60px) */
       min-height: 560px; position: relative;
-      /* overflow must be visible so seat cards outside the circle aren't clipped */
       overflow: visible; width: 100%;
     }
+
     .table-circle {
-      width: 260px; height: 260px; border-radius: 50%;
-      background: #fff; border: 4px solid #d0d4e0;
-      box-shadow: 0 2px 10px rgba(0,0,0,.12);
-      display: flex; align-items: center; justify-content: center;
+      width: 240px; height: 240px; border-radius: 50%;
+      background: var(--surface2);
+      border: 2px solid var(--border-hi);
+      box-shadow: 0 0 60px rgba(0,0,0,.5), inset 0 0 40px rgba(0,0,0,.3);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       position: relative; z-index: 1;
+      gap: 4px;
     }
-    #tableAverage { font-size: 24px; font-weight: 700; color: #1f2a4d; }
+    .table-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    #tableAverage {
+      font-family: var(--font-mono);
+      font-size: 40px; font-weight: 500;
+      color: var(--accent);
+      text-shadow: 0 0 24px var(--accent-glow);
+      line-height: 1;
+    }
+
+    /* Decorative suit marks on table */
+    .table-circle::before {
+      content: "♠ ♥ ♦ ♣";
+      position: absolute; bottom: 36px;
+      font-size: 11px; color: var(--border-hi);
+      letter-spacing: 6px;
+    }
+
     .seats-layer { position: absolute; pointer-events: none; }
     .seat { position: absolute; transform: translate(-50%,-50%); text-align: center; pointer-events: auto; }
+
     .seat-card {
-      background: white; border-radius: 6px; border: 1px solid #ccc;
-      box-shadow: 0 1px 4px rgba(0,0,0,.15);
-      padding: 4px 6px; display: flex; flex-direction: column;
-      align-items: center; gap: 3px; font-size: 11px;
-      width: var(--seat-width, 100px);
+      background: var(--surface2);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+      padding: 6px 8px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      width: var(--seat-width, 96px);
+      transition: border-color .2s, box-shadow .2s;
     }
-    .seat-avatar { width: 22px; height: 22px; border-radius: 50%; overflow: hidden; }
+    .seat-card:hover { border-color: rgba(245,200,66,.3); box-shadow: 0 4px 20px rgba(0,0,0,.5), 0 0 12px var(--accent-glow); }
+    .seat-avatar { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--border-hi); }
     .seat-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .seat-name {
-      font-weight: 600; font-size: 10px; color: #333;
+      font-weight: 700; font-size: 10px; color: var(--text);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      max-width: calc(var(--seat-width, 100px) - 16px);
+      max-width: calc(var(--seat-width, 96px) - 16px);
     }
     .seat-value {
-      font-family: monospace; font-size: 12px;
-      padding: 2px 5px; border-radius: 4px;
-      background: #f4f4f4; min-width: 24px; text-align: center;
+      font-family: var(--font-mono); font-size: 12px;
+      padding: 2px 6px; border-radius: 4px;
+      background: var(--surface3); color: var(--text-dim);
+      min-width: 24px; text-align: center;
     }
-    .seat-value.hidden { background: #eee; color: #aaa; }
+    .seat-value.hidden { color: var(--text-muted); }
     .seat-value.voted-hidden {
-      background: #dbeafe; color: #1d4ed8;
+      background: var(--accent-dim); color: var(--accent);
       animation: pulse 1.8s ease-in-out infinite;
     }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
 
-    .summary { font-size: 13px; color: #444; text-align: center; min-height: 18px; }
-    .center-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 4px; }
+    .summary {
+      font-family: var(--font-mono);
+      font-size: 12px; color: var(--text-dim);
+      text-align: center; min-height: 16px;
+      letter-spacing: .3px;
+    }
+
+    .center-buttons { display: flex; gap: 8px; justify-content: center; }
 
     /* ─── Backlog panel ──────────────────────────────────────────────────────── */
-    .backlog-panel { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
-    .backlog-panel h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
-    .backlog-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
-    .backlog-card {
-      --border-radius: .75rem; --primary-color: #7257fa; --secondary-color: #3c3852;
-      width: 100%; max-width: 230px; padding: .75rem .9rem; cursor: pointer;
-      border-radius: var(--border-radius); background: #f1f1f3;
-      box-shadow: 0 8px 16px rgba(0,0,0,.03); position: relative;
-    }
-    .backlog-card > * + * { margin-top: .5em; }
-    .backlog-card .card__title { font-size: .95rem; font-weight: bold; color: var(--secondary-color); word-break: break-word; }
-    .backlog-card .card__date { color: #6e6b80; font-size: .7rem; }
-    .backlog-card .card__arrow {
-      position: absolute; background: var(--primary-color); padding: .3rem;
-      border-top-left-radius: var(--border-radius); border-bottom-right-radius: var(--border-radius);
-      bottom: 0; right: 0; transition: .2s; display: flex; align-items: center; justify-content: center;
-    }
-    .backlog-card svg { transition: .2s; }
-    .backlog-card:hover .card__title { color: var(--primary-color); text-decoration: underline; }
-    .backlog-card:hover .card__arrow { background: #111; }
-    .backlog-card:hover .card__arrow svg { transform: translateX(3px); }
-    .backlog-item-tile.current .card__title { color: var(--primary-color); }
-    .backlog-input { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
-    .backlog-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 11px; color: #555; }
-    #itemsInput { padding: 6px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; background: #fff; }
+    .backlog-list { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; }
 
-    /* ─── Voting cards ───────────────────────────────────────────────────────── */
-    .cards-row { margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd; display: flex; justify-content: center; }
-    .cards { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-    .vote-card {
-      width: 48px; height: 64px; background: white;
-      border-radius: 4px; border: 1px solid #ccc;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 600; cursor: pointer;
-      transition: background .1s, transform .05s, border-color .1s;
-      font-size: 13px; user-select: none;
+    .backlog-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      cursor: pointer; position: relative;
+      transition: border-color .2s, background .2s;
     }
-    .vote-card:hover { background: #f0f0ff; transform: translateY(-2px); }
-    .vote-card.selected { background: #0050b3; color: white; border-color: #003a80; transform: translateY(-4px); }
-    .vote-card.disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
-    @media (max-width: 700px) { .vote-card { width: 40px; height: 56px; font-size: 12px; } }
+    .backlog-card:hover { border-color: var(--border-hi); background: var(--surface3); }
+    .backlog-card .card__title {
+      font-size: 12px; font-weight: 700; color: var(--text);
+      word-break: break-word; padding-right: 20px;
+    }
+    .backlog-card .card__date { font-family: var(--font-mono); color: var(--text-muted); font-size: 10px; margin-top: 4px; }
+    .backlog-card .card__arrow {
+      position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
+      color: var(--text-muted); font-size: 14px;
+      transition: color .2s, transform .2s;
+    }
+    .backlog-card:hover .card__arrow { color: var(--accent); transform: translateY(-50%) translateX(2px); }
+    .backlog-item-tile.current .backlog-card {
+      border-color: rgba(245,200,66,.4);
+      background: rgba(245,200,66,.06);
+    }
+    .backlog-item-tile.current .card__title { color: var(--accent); }
+
+    .backlog-input { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+    .backlog-buttons { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    #itemsInput {
+      padding: 8px 10px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); font-size: 12px;
+      background: var(--surface2); color: var(--text);
+      font-family: var(--font-mono);
+    }
+    #itemsInput:focus { outline: none; border-color: var(--accent); }
+
+    /* ─── Voting cards row ───────────────────────────────────────────────────── */
+    .cards-row {
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      display: flex; justify-content: center;
+    }
+    .cards { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+
+    .vote-card {
+      width: 50px; height: 68px;
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-hi);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 500; font-size: 14px;
+      cursor: pointer; user-select: none;
+      transition: transform .15s, border-color .15s, background .15s, box-shadow .15s;
+      color: var(--text-dim);
+      position: relative;
+    }
+    /* Suit watermark */
+    .vote-card::after {
+      content: attr(data-suit);
+      position: absolute; bottom: 3px; right: 5px;
+      font-size: 8px; color: var(--border-hi);
+      pointer-events: none;
+    }
+    .vote-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+      box-shadow: 0 8px 20px rgba(0,0,0,.4), 0 0 14px var(--accent-glow);
+    }
+    .vote-card.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d0f14;
+      transform: translateY(-8px);
+      box-shadow: 0 10px 24px rgba(0,0,0,.4), 0 0 20px var(--accent-glow);
+      font-weight: 700;
+    }
+    .vote-card.selected::after { color: rgba(0,0,0,.25); }
+    .vote-card.disabled { opacity: .3; cursor: not-allowed; pointer-events: none; transform: none; }
+
+    @media (max-width: 700px) { .vote-card { width: 42px; height: 58px; font-size: 12px; } }
 
     /* ─── Action buttons ─────────────────────────────────────────────────────── */
     .action-button {
-      cursor: pointer; border-radius: .5rem;
-      border: 1px solid #007bff; background: #007bff; color: #fff;
-      font-size: .8rem; font-weight: 600;
-      padding: .35rem .6rem; min-width: 7rem; height: 2.1rem;
+      cursor: pointer; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-hi);
+      background: var(--surface2); color: var(--text);
+      font-family: var(--font-head);
+      font-size: 12px; font-weight: 700;
+      padding: 0 18px; height: 36px;
       display: inline-flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,.15); white-space: nowrap; gap: .35rem;
-      transition: background .15s, border-color .15s, opacity .15s;
+      white-space: nowrap; gap: 6px;
+      transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
+      letter-spacing: .3px;
     }
-    .action-button:hover  { background: #0065d4; border-color: #0065d4; }
-    .action-button:active { background: #004f9f; border-color: #004f9f; }
-    .action-button:disabled { opacity: .5; cursor: not-allowed; }
-    .action-button.secondary { background: #6c757d; border-color: #6c757d; }
-    .action-button.secondary:hover { background: #5a6268; border-color: #5a6268; }
+    .action-button:hover { background: var(--surface3); border-color: var(--border-hi); }
+    .action-button:disabled { opacity: .35; cursor: not-allowed; }
 
-    /* ─── Name label ─────────────────────────────────────────────────────────── */
-    .name-label {
-      position: relative; display: flex; width: 250px;
-      border-radius: 6px; border: 2px solid #373737;
-      padding: 8px 8px 8px 10px; background: #fff; color: #373737;
+    .action-button.primary {
+      background: var(--accent); border-color: var(--accent);
+      color: #0d0f14;
     }
-    .name-label .icon { position: absolute; top: 50%; right: 0; transform: translate(-50%,-50%); color: #888; pointer-events: none; }
-    .name-label .input { background: transparent; outline: none; border: none; color: #373737; font-size: 14px; width: 100%; }
+    .action-button.primary:hover {
+      background: #fad55c; border-color: #fad55c;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+    .action-button.danger {
+      border-color: rgba(248,113,113,.3);
+      color: var(--red);
+    }
+    .action-button.danger:hover {
+      background: rgba(248,113,113,.1);
+      border-color: rgba(248,113,113,.5);
+    }
+    .action-button.secondary {
+      border-color: var(--border); color: var(--text-muted);
+    }
 
     /* ─── Toast ──────────────────────────────────────────────────────────────── */
     #toast {
-      position: fixed; bottom: 20px; left: 50%;
-      transform: translateX(-50%) translateY(60px);
-      background: #1f2a4d; color: #fff;
-      padding: 10px 20px; border-radius: 8px; font-size: 13px;
-      opacity: 0; transition: transform .3s, opacity .3s;
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(70px);
+      background: var(--surface3);
+      border: 1px solid var(--border-hi);
+      color: var(--text);
+      padding: 10px 20px; border-radius: var(--radius-md);
+      font-size: 13px; font-family: var(--font-head); font-weight: 600;
+      opacity: 0; transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s;
       pointer-events: none; z-index: 9999;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      white-space: nowrap;
     }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
     /* ─── Overlay / dialog base ──────────────────────────────────────────────── */
     .overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.5);
-      display: flex; align-items: center; justify-content: center; z-index: 1000;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+      animation: fadeIn .2s ease;
     }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
     .overlay.hidden { display: none; }
+
     .dialog {
-      background: #fff; border-radius: 14px;
-      box-shadow: 0 16px 48px rgba(0,0,0,.22);
-      padding: 28px 28px 20px; width: 400px; max-width: 94vw;
+      background: var(--surface);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 24px 80px rgba(0,0,0,.6);
+      padding: 28px; width: 420px; max-width: 94vw;
+      animation: slideUp .25s cubic-bezier(.34,1.2,.64,1);
     }
-    .dialog h2 { margin: 0 0 6px; font-size: 20px; color: #1f2a4d; }
-    .dialog p  { margin: 0 0 18px; font-size: 13px; color: #666; }
-    .dialog-row { margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
-    .dialog-row label { font-size: 12px; color: #555; font-weight: 600; }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+    .dialog-header { margin-bottom: 6px; }
+    .dialog-header h2 {
+      font-size: 20px; font-weight: 800;
+      color: var(--text); letter-spacing: -.3px;
+    }
+    .dialog-header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; font-family: var(--font-mono); font-weight: 400; }
+
+    .divider { height: 1px; background: var(--border); margin: 18px 0; }
+
+    .dialog-row { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .dialog-row > label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--text-muted);
+    }
     .dialog-row input {
-      width: 100%; padding: 8px 10px;
-      border-radius: 7px; border: 1.5px solid #ccc; font-size: 14px;
-      transition: border-color .15s;
+      width: 100%; padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-hi);
+      background: var(--surface2); color: var(--text);
+      font-size: 14px; font-family: var(--font-head); font-weight: 600;
+      transition: border-color .2s;
     }
-    .dialog-row input:focus { outline: none; border-color: #007bff; }
-    .dialog-row input.error { border-color: #e24b4a; }
-    .error-msg { font-size: 11px; color: #e24b4a; min-height: 14px; }
-    .avatar-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+    .dialog-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .dialog-row input.error { border-color: var(--red); }
+    .dialog-row input::placeholder { color: var(--text-muted); font-weight: 400; }
+    .error-msg { font-size: 11px; color: var(--red); font-family: var(--font-mono); min-height: 14px; }
+
+    .avatar-grid { display: flex; flex-wrap: wrap; gap: 8px; }
     .avatar-option {
       width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
-      border: 2.5px solid transparent; cursor: pointer;
-      transition: border-color .15s, box-shadow .15s;
+      border: 2px solid var(--border); cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, transform .15s;
     }
+    .avatar-option:hover { transform: scale(1.08); border-color: var(--border-hi); }
     .avatar-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .avatar-option.selected { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,123,255,.2); }
-    .dialog-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+    .avatar-option.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim), 0 0 12px var(--accent-glow);
+    }
 
-    /* ─── Step 1: Create or Join choice ─────────────────────────────────────── */
-    .choice-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 4px 0 8px;
-    }
+    .dialog-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+    /* ─── Choice cards ───────────────────────────────────────────────────────── */
+    .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0 4px; }
+
     .choice-card {
-      border: 2px solid #e0e3ef; border-radius: 12px;
-      padding: 20px 14px; cursor: pointer; text-align: center;
-      transition: border-color .15s, box-shadow .15s, background .15s;
-      background: #fafbff;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-lg);
+      padding: 22px 16px; cursor: pointer; text-align: center;
+      background: var(--surface2);
+      transition: border-color .2s, background .2s, box-shadow .2s, transform .15s;
     }
-    .choice-card:hover { border-color: #007bff; background: #f0f5ff; box-shadow: 0 4px 12px rgba(0,100,255,.1); }
-    .choice-card.selected { border-color: #0050b3; background: #eef3ff; box-shadow: 0 4px 14px rgba(0,80,179,.15); }
-    .choice-icon { font-size: 28px; margin-bottom: 6px; }
-    .choice-label { font-size: 14px; font-weight: 700; color: #1f2a4d; }
-    .choice-sub   { font-size: 11px; color: #777; margin-top: 3px; }
+    .choice-card:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      box-shadow: 0 0 20px var(--accent-glow);
+      transform: translateY(-2px);
+    }
+    .choice-icon { font-size: 32px; margin-bottom: 10px; }
+    .choice-label { font-size: 15px; font-weight: 800; color: var(--text); }
+    .choice-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: var(--font-mono); }
 
     /* ─── Share modal ────────────────────────────────────────────────────────── */
-    .share-modal .share-url-row {
-      display: flex; gap: 8px; align-items: center; margin-top: 4px;
+    .room-id-display {
+      font-family: var(--font-mono);
+      font-size: 32px; font-weight: 500;
+      color: var(--accent);
+      text-align: center;
+      background: var(--accent-dim);
+      border: 1px dashed rgba(245,200,66,.35);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      letter-spacing: 6px;
+      text-shadow: 0 0 20px var(--accent-glow);
     }
-    .share-modal .share-url-row input {
-      flex: 1; padding: 8px 10px; border-radius: 7px;
-      border: 1.5px solid #ccc; font-size: 13px;
-      background: #f8f8fb; color: #333;
+
+    .share-url-row { display: flex; gap: 8px; align-items: center; }
+    .share-url-row input {
+      flex: 1; padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-hi);
+      background: var(--surface2); color: var(--text-dim);
+      font-family: var(--font-mono); font-size: 12px;
     }
-    .share-modal .share-url-row button {
-      flex-shrink: 0; padding: 8px 14px;
-      border-radius: 7px; border: none;
-      background: #0050b3; color: #fff;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      transition: background .15s;
+    .share-url-row button {
+      flex-shrink: 0; padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--accent);
+      background: var(--accent-dim); color: var(--accent);
+      font-family: var(--font-head);
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: background .15s, box-shadow .15s;
     }
-    .share-modal .share-url-row button:hover { background: #003d8a; }
-    .share-modal .room-id-display {
-      font-size: 28px; font-weight: 800; color: #0050b3;
-      letter-spacing: 3px; text-align: center;
-      background: #eef3ff; border-radius: 10px;
-      padding: 14px; margin: 10px 0;
-      border: 2px dashed #a0b8e8;
-    }
-    .share-modal .share-hint {
-      font-size: 12px; color: #888; text-align: center; margin-top: 6px;
-    }
+    .share-url-row button:hover { background: rgba(245,200,66,.22); box-shadow: 0 0 10px var(--accent-glow); }
+    .share-hint { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px; }
   </style>
 </head>
 <body>
 
+<!-- ─── Header ───────────────────────────────────────────────────────────────── -->
 <header>
-  <h1>Planning Poker</h1>
+  <div class="header-logo">
+    <div class="logo-mark">🃏</div>
+    <h1>Planning Poker</h1>
+  </div>
   <div class="header-right">
     <span class="room-chip" id="roomLabel"></span>
-    <button class="share-btn" id="shareBtnHeader" type="button" title="Share room">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <button class="share-btn" id="shareBtnHeader" type="button">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
         <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
       </svg>
-      Share Room
+      Share
     </button>
   </div>
 </header>
 
+<!-- ─── Main ─────────────────────────────────────────────────────────────────── -->
 <main>
   <div class="top-row">
     <div class="field-group">
-      <label>Your name</label>
+      <label>Player</label>
       <label class="name-label">
-        <input type="text" id="nameInput" class="input" placeholder="e.g. Alex" readonly aria-label="Your display name" />
-        <span class="icon" aria-hidden="true">&#128100;</span>
+        <input type="text" id="nameInput" class="input" placeholder="Your name" readonly aria-label="Your display name" />
+        <span class="icon">&#128100;</span>
       </label>
     </div>
     <div class="field-group">
       <label>Room</label>
-      <div class="room-name" id="roomNameDisplay"></div>
-      <div style="font-size:11px;color:#777;">Change room via URL hash, e.g. <code>#team1</code></div>
+      <div class="room-name" id="roomNameDisplay">—</div>
+    </div>
+    <div class="field-group" style="margin-left:auto;">
+      <div class="status" id="statusText" role="status" aria-live="polite">Connecting…</div>
     </div>
   </div>
 
-  <div class="status" id="statusText" role="status" aria-live="polite">Connecting…</div>
-
   <div class="middle-layout">
-    <div class="participants-panel" aria-label="Participants">
-      <h3>Participants</h3>
-      <div class="participants-list" id="participantsList"></div>
+
+    <!-- Left: participants -->
+    <div class="panel" aria-label="Participants">
+      <div class="panel-title">Players</div>
+      <div class="participants-list" id="participantsList">
+        <div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">No participants yet.</div>
+      </div>
     </div>
 
+    <!-- Center: table -->
     <div class="center-panel">
       <div class="table-container" role="img" aria-label="Voting table">
-        <div class="table-circle"><span id="tableAverage"></span></div>
+        <div class="table-circle">
+          <span class="table-label">Average</span>
+          <span id="tableAverage"></span>
+        </div>
         <div class="seats-layer" id="seatsLayer"></div>
       </div>
       <div class="center-buttons">
-        <button id="revealBtn" class="action-button" type="button">Reveal</button>
-        <button id="resetBtn"  class="action-button secondary" type="button">Reset</button>
+        <button id="revealBtn" class="action-button primary" type="button">Reveal Votes</button>
+        <button id="resetBtn"  class="action-button danger"  type="button">Reset</button>
       </div>
       <div class="summary" id="summaryText" aria-live="polite"></div>
     </div>
 
-    <div class="backlog-panel" aria-label="Backlog">
-      <h3>Backlog</h3>
-      <div class="backlog-list" id="backlogList"></div>
+    <!-- Right: backlog -->
+    <div class="panel" aria-label="Backlog">
+      <div class="panel-title">Backlog</div>
+      <div class="backlog-list" id="backlogList">
+        <div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">No items loaded.</div>
+      </div>
       <div class="backlog-input">
-        <label for="itemsInput">Items (one per line)</label>
+        <label for="itemsInput" style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);">Add items</label>
         <textarea id="itemsInput" placeholder="Story 1&#10;Story 2&#10;Story 3"></textarea>
         <div class="backlog-buttons">
-          <button id="loadItemsBtn" class="action-button" type="button">Add Items</button>
-          <button id="prevItemBtn"  class="action-button" type="button">Previous</button>
-          <button id="nextItemBtn"  class="action-button" type="button">Next</button>
-          <span id="itemIndexLabel"></span>
+          <button id="loadItemsBtn" class="action-button primary"    type="button">Load</button>
+          <button id="prevItemBtn"  class="action-button secondary"  type="button">← Prev</button>
+          <button id="nextItemBtn"  class="action-button secondary"  type="button">Next →</button>
+          <span id="itemIndexLabel" style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-left:4px;"></span>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Bottom: voting cards -->
   <div class="cards-row">
     <div class="cards" id="cardsContainer" role="group" aria-label="Voting cards"></div>
   </div>
@@ -375,20 +654,21 @@
 
 <div id="toast" role="alert" aria-live="assertive"></div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     STEP 1 — Create or Join
-════════════════════════════════════════════════════════════ -->
+<!-- ═══ STEP 1 — Create or Join ════════════════════════════════════════════════ -->
 <div id="choiceOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="choiceTitle">
   <div class="dialog">
-    <h2 id="choiceTitle">Welcome to Planning Poker 🃏</h2>
-    <p>Get started by creating a new room or joining an existing one.</p>
+    <div class="dialog-header">
+      <h2 id="choiceTitle">Welcome 🃏</h2>
+      <p>Create a session or join one with a code.</p>
+    </div>
+    <div class="divider"></div>
     <div class="choice-grid">
-      <div class="choice-card" id="choiceCreate" role="button" tabindex="0" aria-label="Create a new room">
+      <div class="choice-card" id="choiceCreate" role="button" tabindex="0">
         <div class="choice-icon">✨</div>
         <div class="choice-label">Create Room</div>
         <div class="choice-sub">Start a new session</div>
       </div>
-      <div class="choice-card" id="choiceJoin" role="button" tabindex="0" aria-label="Join an existing room">
+      <div class="choice-card" id="choiceJoin" role="button" tabindex="0">
         <div class="choice-icon">🔗</div>
         <div class="choice-label">Join Room</div>
         <div class="choice-sub">Enter a room code</div>
@@ -397,13 +677,14 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     STEP 2a — Create: name + avatar (room auto-generated)
-════════════════════════════════════════════════════════════ -->
+<!-- ═══ STEP 2a — Create ═══════════════════════════════════════════════════════ -->
 <div id="createOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="createTitle">
   <div class="dialog">
-    <h2 id="createTitle">Create a Room</h2>
-    <p>Choose a name and avatar. A room code will be generated for you.</p>
+    <div class="dialog-header">
+      <h2 id="createTitle">Create a Room</h2>
+      <p>Pick a name and avatar — a room code will be generated.</p>
+    </div>
+    <div class="divider"></div>
     <div class="dialog-row">
       <label for="createNameInput">Your name</label>
       <input id="createNameInput" type="text" placeholder="e.g. Alex" maxlength="64" autocomplete="nickname" />
@@ -411,26 +692,27 @@
     </div>
     <div class="dialog-row">
       <label>Avatar</label>
-      <div id="createAvatarGrid" class="avatar-grid" role="radiogroup" aria-label="Choose an avatar"></div>
+      <div id="createAvatarGrid" class="avatar-grid" role="radiogroup"></div>
     </div>
     <div class="dialog-footer">
-      <button id="createBackBtn"    class="action-button secondary" type="button" style="min-width:5rem;">← Back</button>
-      <button id="createConfirmBtn" class="action-button"           type="button">Create &amp; Enter</button>
+      <button id="createBackBtn"    class="action-button secondary" type="button">← Back</button>
+      <button id="createConfirmBtn" class="action-button primary"   type="button">Create &amp; Enter</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     STEP 2b — Join: room code + name + avatar
-════════════════════════════════════════════════════════════ -->
+<!-- ═══ STEP 2b — Join ════════════════════════════════════════════════════════ -->
 <div id="joinOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="joinTitle">
   <div class="dialog">
-    <h2 id="joinTitle">Join a Room</h2>
-    <p>Enter the room code shared with you, then choose a name and avatar.</p>
+    <div class="dialog-header">
+      <h2 id="joinTitle">Join a Room</h2>
+      <p>Enter the code shared with you, then your name.</p>
+    </div>
+    <div class="divider"></div>
     <div class="dialog-row">
       <label for="joinRoomInput">Room code</label>
-      <input id="joinRoomInput" type="text" placeholder="e.g. team1" maxlength="64"
-             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <input id="joinRoomInput" type="text" placeholder="e.g. k7xq2m"
+             maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
       <span class="error-msg" id="joinRoomError"></span>
     </div>
     <div class="dialog-row">
@@ -440,28 +722,27 @@
     </div>
     <div class="dialog-row">
       <label>Avatar</label>
-      <div id="joinAvatarGrid" class="avatar-grid" role="radiogroup" aria-label="Choose an avatar"></div>
+      <div id="joinAvatarGrid" class="avatar-grid" role="radiogroup"></div>
     </div>
     <div class="dialog-footer">
-      <button id="joinBackBtn"    class="action-button secondary" type="button" style="min-width:5rem;">← Back</button>
-      <button id="joinConfirmBtn" class="action-button"           type="button">Join Room</button>
+      <button id="joinBackBtn"    class="action-button secondary" type="button">← Back</button>
+      <button id="joinConfirmBtn" class="action-button primary"   type="button">Join Room</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     Share modal
-════════════════════════════════════════════════════════════ -->
+<!-- ═══ Share modal ═══════════════════════════════════════════════════════════ -->
 <div id="shareOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
-  <div class="dialog share-modal" style="max-width:440px;">
-    <h2 id="shareTitle">Share this Room</h2>
-    <p>Send the link or the room code to your teammates.</p>
-
+  <div class="dialog" style="max-width:420px;">
+    <div class="dialog-header">
+      <h2 id="shareTitle">Share Room</h2>
+      <p>Send the link or code to your teammates.</p>
+    </div>
+    <div class="divider"></div>
     <div class="dialog-row">
       <label>Room code</label>
       <div class="room-id-display" id="shareRoomCode"></div>
     </div>
-
     <div class="dialog-row">
       <label>Invite link</label>
       <div class="share-url-row">
@@ -469,28 +750,24 @@
         <button id="copyLinkBtn" type="button">Copy</button>
       </div>
     </div>
-
     <p class="share-hint">Anyone with the link or code can join this room.</p>
-
     <div class="dialog-footer">
-      <button id="shareCloseBtn" class="action-button secondary" type="button" style="min-width:5rem;">Close</button>
+      <button id="shareCloseBtn" class="action-button secondary" type="button">Close</button>
     </div>
   </div>
 </div>
 
+<!-- ─── Socket.IO + App logic (unchanged) ────────────────────────────────────── -->
 <script src="/socket.io/socket.io.js"></script>
 <script>
 "use strict";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const FIB_CARDS   = ["0","0.5","1","2","3","5","8","13","20","40","100","?"];
+const FIB_CARDS    = ["0","0.5","1","2","3","5","8","13","20","40","100","?"];
+const CARD_SUITS   = ["♠","♥","♦","♣","♠","♥","♦","♣","♠","♥","♦","♣"];
 const AVATAR_FILES = [
   "/avatars/avatar1.jpg","/avatars/avatar2.jpg","/avatars/avatar3.jpg",
   "/avatars/avatar4.jpg","/avatars/avatar5.jpg","/avatars/avatar6.jpg",
 ];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const $ = (id) => document.getElementById(id);
 
@@ -499,101 +776,60 @@ function escapeHtml(str) {
     .replace(/&/g,"&amp;").replace(/</g,"&lt;")
     .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
-
-function generateRoomId() {
-  // 6-char alphanumeric code, e.g. "k7xq2m"
-  return Math.random().toString(36).slice(2, 8);
-}
-
-function getRoomIdFromUrl() {
-  return window.location.hash.replace("#","").trim() || null;
-}
-
-function setRoomInUrl(roomId) {
-  window.history.replaceState(null, "", "#" + roomId);
-}
+function generateRoomId() { return Math.random().toString(36).slice(2,8); }
+function getRoomIdFromUrl() { return window.location.hash.replace("#","").trim() || null; }
+function setRoomInUrl(id)   { window.history.replaceState(null,"","#"+id); }
 
 let toastTimer = null;
-function showToast(msg, ms = 2800) {
-  const el = $("toast");
-  el.textContent = msg;
-  el.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), ms);
+function showToast(msg, ms=2800) {
+  const el=$("toast"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),ms);
 }
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
-
-const roomLabel        = $("roomLabel");
-const roomNameDisplay  = $("roomNameDisplay");
-const nameInput        = $("nameInput");
-const cardsContainer   = $("cardsContainer");
-const statusText       = $("statusText");
-const summaryText      = $("summaryText");
-const revealBtn        = $("revealBtn");
-const resetBtn         = $("resetBtn");
-const seatsLayer       = $("seatsLayer");
-const tableAverage     = $("tableAverage");
-const participantsList = $("participantsList");
-const itemsInput       = $("itemsInput");
-const loadItemsBtn     = $("loadItemsBtn");
-const prevItemBtn      = $("prevItemBtn");
-const nextItemBtn      = $("nextItemBtn");
-const backlogList      = $("backlogList");
-const itemIndexLabel   = $("itemIndexLabel");
-
-// overlays
-const choiceOverlay  = $("choiceOverlay");
-const createOverlay  = $("createOverlay");
-const joinOverlay    = $("joinOverlay");
-const shareOverlay   = $("shareOverlay");
+const roomLabel=$("roomLabel"), roomNameDisplay=$("roomNameDisplay"), nameInput=$("nameInput");
+const cardsContainer=$("cardsContainer"), statusText=$("statusText"), summaryText=$("summaryText");
+const revealBtn=$("revealBtn"), resetBtn=$("resetBtn");
+const seatsLayer=$("seatsLayer"), tableAverage=$("tableAverage"), participantsList=$("participantsList");
+const itemsInput=$("itemsInput"), loadItemsBtn=$("loadItemsBtn");
+const prevItemBtn=$("prevItemBtn"), nextItemBtn=$("nextItemBtn");
+const backlogList=$("backlogList"), itemIndexLabel=$("itemIndexLabel");
+const choiceOverlay=$("choiceOverlay"), createOverlay=$("createOverlay");
+const joinOverlay=$("joinOverlay"),    shareOverlay=$("shareOverlay");
 
 // ─── Session state ────────────────────────────────────────────────────────────
-
-let ROOM_ID          = getRoomIdFromUrl();   // null until chosen
-let socket           = null;
-let currentState     = { revealed: false, votes: {} };
-let myCurrentVote    = null;
-let myAvatarIndexCreate = 0;
-let myAvatarIndexJoin   = 0;
-let myName           = "";
-let myAvatarUrl      = "";
-let hasJoined        = false;
-let items            = [];
-let currentItemIndex = -1;
+let ROOM_ID=getRoomIdFromUrl(), socket=null;
+let currentState={revealed:false,votes:{}};
+let myCurrentVote=null, myAvatarIndexCreate=0, myAvatarIndexJoin=0;
+let myName="", myAvatarUrl="", hasJoined=false;
+let items=[], currentItemIndex=-1;
 
 // ─── Avatar grids ─────────────────────────────────────────────────────────────
-
-function buildAvatarGrid(containerId, getIndex, setIndex) {
-  const container = $(containerId);
-  container.innerHTML = "";
-  AVATAR_FILES.forEach((url, index) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "avatar-option" + (index === 0 ? " selected" : "");
-    wrapper.setAttribute("role",         "radio");
-    wrapper.setAttribute("aria-checked", index === 0 ? "true" : "false");
-    wrapper.setAttribute("tabindex",     index === 0 ? "0" : "-1");
-    wrapper.setAttribute("aria-label",   `Avatar ${index + 1}`);
-    const img = document.createElement("img");
-    img.src = url; img.alt = "";
-    wrapper.appendChild(img);
-    const select = () => {
-      setIndex(index);
-      container.querySelectorAll(".avatar-option").forEach((opt, i) => {
-        const active = i === index;
-        opt.classList.toggle("selected", active);
-        opt.setAttribute("aria-checked", active ? "true" : "false");
-        opt.setAttribute("tabindex",     active ? "0"    : "-1");
+function buildAvatarGrid(containerId, getIdx, setIdx) {
+  const c=$(containerId); c.innerHTML="";
+  AVATAR_FILES.forEach((url,i)=>{
+    const w=document.createElement("div");
+    w.className="avatar-option"+(i===0?" selected":"");
+    w.setAttribute("role","radio"); w.setAttribute("aria-checked",i===0?"true":"false");
+    w.setAttribute("tabindex",i===0?"0":"-1"); w.setAttribute("aria-label",`Avatar ${i+1}`);
+    const img=document.createElement("img"); img.src=url; img.alt="";
+    w.appendChild(img);
+    const sel=()=>{
+      setIdx(i);
+      c.querySelectorAll(".avatar-option").forEach((o,j)=>{
+        const a=j===i;
+        o.classList.toggle("selected",a);
+        o.setAttribute("aria-checked",a?"true":"false");
+        o.setAttribute("tabindex",a?"0":"-1");
       });
     };
-    wrapper.addEventListener("click",   select);
-    wrapper.addEventListener("keydown", (e) => { if (e.key==="Enter"||e.key===" ") select(); });
-    container.appendChild(wrapper);
+    w.addEventListener("click",sel);
+    w.addEventListener("keydown",(e)=>{if(e.key==="Enter"||e.key===" ")sel();});
+    c.appendChild(w);
   });
 }
 
-// ─── Flow: Step 1 — Create or Join choice ────────────────────────────────────
-
+// ─── Flow control ─────────────────────────────────────────────────────────────
 function showChoiceScreen() {
   choiceOverlay.classList.remove("hidden");
   createOverlay.classList.add("hidden");
@@ -601,457 +837,237 @@ function showChoiceScreen() {
   shareOverlay.classList.add("hidden");
 }
 
-$("choiceCreate").addEventListener("click", () => {
-  choiceOverlay.classList.add("hidden");
-  createOverlay.classList.remove("hidden");
-  $("createNameInput").focus();
-});
-$("choiceJoin").addEventListener("click", () => {
-  choiceOverlay.classList.add("hidden");
-  joinOverlay.classList.remove("hidden");
-  $("joinRoomInput").focus();
+$("choiceCreate").addEventListener("click",()=>{ choiceOverlay.classList.add("hidden"); createOverlay.classList.remove("hidden"); $("createNameInput").focus(); });
+$("choiceJoin"  ).addEventListener("click",()=>{ choiceOverlay.classList.add("hidden"); joinOverlay.classList.remove("hidden");   $("joinRoomInput").focus(); });
+["choiceCreate","choiceJoin"].forEach(id=>{
+  $(id).addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();$(id).click();}});
 });
 
-// Keyboard nav on choice cards
-["choiceCreate","choiceJoin"].forEach((id) => {
-  $(id).addEventListener("keydown", (e) => {
-    if (e.key==="Enter"||e.key===" ") { e.preventDefault(); $(id).click(); }
-  });
-});
-
-// ─── Flow: Step 2a — Create Room ─────────────────────────────────────────────
-
-$("createBackBtn").addEventListener("click", () => {
-  createOverlay.classList.add("hidden");
-  showChoiceScreen();
-});
-
-$("createConfirmBtn").addEventListener("click", confirmCreate);
-$("createNameInput").addEventListener("keydown", (e) => {
-  if (e.key==="Enter") { e.preventDefault(); confirmCreate(); }
-});
+$("createBackBtn").addEventListener("click",()=>{ createOverlay.classList.add("hidden"); showChoiceScreen(); });
+$("createConfirmBtn").addEventListener("click",confirmCreate);
+$("createNameInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();confirmCreate();}});
 
 function confirmCreate() {
-  const rawName = $("createNameInput").value.trim();
-  if (!rawName) {
-    $("createNameError").textContent = "Please enter your name.";
-    $("createNameInput").classList.add("error");
-    $("createNameInput").focus();
-    return;
-  }
-  $("createNameError").textContent = "";
-  $("createNameInput").classList.remove("error");
-
-  // Generate a fresh room ID and push it to the URL
-  ROOM_ID = generateRoomId();
-  setRoomInUrl(ROOM_ID);
-
-  myName      = rawName.slice(0, 64);
-  myAvatarUrl = AVATAR_FILES[myAvatarIndexCreate] ?? AVATAR_FILES[0];
-  hasJoined   = true;
-
-  nameInput.value = myName;
-  updateRoomDisplay();
-
-  createOverlay.classList.add("hidden");
-  joinRoom();
-  statusText.textContent = "Room created! Pick a card to cast your vote.";
-
-  // Auto-open share modal so the host can immediately share
+  const raw=$("createNameInput").value.trim();
+  if(!raw){ $("createNameError").textContent="Please enter your name."; $("createNameInput").classList.add("error"); $("createNameInput").focus(); return; }
+  $("createNameError").textContent=""; $("createNameInput").classList.remove("error");
+  ROOM_ID=generateRoomId(); setRoomInUrl(ROOM_ID);
+  myName=raw.slice(0,64); myAvatarUrl=AVATAR_FILES[myAvatarIndexCreate]??AVATAR_FILES[0];
+  hasJoined=true; nameInput.value=myName; updateRoomDisplay();
+  createOverlay.classList.add("hidden"); joinRoom();
+  statusText.textContent="Room created! Pick a card to vote.";
   openShareModal();
 }
 
-// ─── Flow: Step 2b — Join Room ───────────────────────────────────────────────
-
-$("joinBackBtn").addEventListener("click", () => {
-  joinOverlay.classList.add("hidden");
-  showChoiceScreen();
-});
-
-$("joinConfirmBtn").addEventListener("click", confirmJoin);
-["joinRoomInput","joinNameInput"].forEach((id) => {
-  $(id).addEventListener("keydown", (e) => {
-    if (e.key==="Enter") { e.preventDefault(); confirmJoin(); }
-  });
+$("joinBackBtn").addEventListener("click",()=>{ joinOverlay.classList.add("hidden"); showChoiceScreen(); });
+$("joinConfirmBtn").addEventListener("click",confirmJoin);
+["joinRoomInput","joinNameInput"].forEach(id=>{
+  $(id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();confirmJoin();}});
 });
 
 function confirmJoin() {
-  const rawRoom = $("joinRoomInput").value.trim();
-  const rawName = $("joinNameInput").value.trim();
-  let valid = true;
-
-  if (!rawRoom) {
-    $("joinRoomError").textContent = "Please enter a room code.";
-    $("joinRoomInput").classList.add("error");
-    valid = false;
-  } else {
-    $("joinRoomError").textContent = "";
-    $("joinRoomInput").classList.remove("error");
-  }
-
-  if (!rawName) {
-    $("joinNameError").textContent = "Please enter your name.";
-    $("joinNameInput").classList.add("error");
-    if (valid) $("joinNameInput").focus();
-    valid = false;
-  } else {
-    $("joinNameError").textContent = "";
-    $("joinNameInput").classList.remove("error");
-  }
-
-  if (!valid) return;
-
-  ROOM_ID     = rawRoom.slice(0, 64);
-  myName      = rawName.slice(0, 64);
-  myAvatarUrl = AVATAR_FILES[myAvatarIndexJoin] ?? AVATAR_FILES[0];
-  hasJoined   = true;
-
-  setRoomInUrl(ROOM_ID);
-  nameInput.value = myName;
-  updateRoomDisplay();
-
-  joinOverlay.classList.add("hidden");
-  joinRoom();
-  statusText.textContent = "Joined room! Pick a card to cast your vote.";
+  const rawRoom=$("joinRoomInput").value.trim();
+  const rawName=$("joinNameInput").value.trim();
+  let ok=true;
+  if(!rawRoom){ $("joinRoomError").textContent="Please enter a room code."; $("joinRoomInput").classList.add("error"); ok=false; }
+  else { $("joinRoomError").textContent=""; $("joinRoomInput").classList.remove("error"); }
+  if(!rawName){ $("joinNameError").textContent="Please enter your name."; $("joinNameInput").classList.add("error"); if(ok)$("joinNameInput").focus(); ok=false; }
+  else { $("joinNameError").textContent=""; $("joinNameInput").classList.remove("error"); }
+  if(!ok) return;
+  ROOM_ID=rawRoom.slice(0,64); myName=rawName.slice(0,64);
+  myAvatarUrl=AVATAR_FILES[myAvatarIndexJoin]??AVATAR_FILES[0];
+  hasJoined=true; setRoomInUrl(ROOM_ID); nameInput.value=myName; updateRoomDisplay();
+  joinOverlay.classList.add("hidden"); joinRoom();
+  statusText.textContent="Joined! Pick a card to vote.";
 }
 
-// ─── Share modal ──────────────────────────────────────────────────────────────
-
+// ─── Share ────────────────────────────────────────────────────────────────────
 function openShareModal() {
-  if (!ROOM_ID) return;
-  const url = window.location.origin + window.location.pathname + "#" + ROOM_ID;
-  $("shareRoomCode").textContent  = ROOM_ID.toUpperCase();
-  $("shareUrlInput").value        = url;
+  if(!ROOM_ID) return;
+  const url=window.location.origin+window.location.pathname+"#"+ROOM_ID;
+  $("shareRoomCode").textContent=ROOM_ID.toUpperCase();
+  $("shareUrlInput").value=url;
   shareOverlay.classList.remove("hidden");
 }
-
-$("shareBtnHeader").addEventListener("click", openShareModal);
-$("shareCloseBtn").addEventListener("click",  () => shareOverlay.classList.add("hidden"));
-
-$("copyLinkBtn").addEventListener("click", () => {
-  const input = $("shareUrlInput");
-  navigator.clipboard.writeText(input.value).then(() => {
-    showToast("Invite link copied to clipboard! 🎉");
-    $("copyLinkBtn").textContent = "Copied!";
-    setTimeout(() => { $("copyLinkBtn").textContent = "Copy"; }, 2000);
-  }).catch(() => {
-    // Fallback for older browsers
-    input.select();
-    document.execCommand("copy");
-    showToast("Link copied!");
-  });
+$("shareBtnHeader").addEventListener("click",openShareModal);
+$("shareCloseBtn").addEventListener("click",()=>shareOverlay.classList.add("hidden"));
+shareOverlay.addEventListener("click",e=>{if(e.target===shareOverlay)shareOverlay.classList.add("hidden");});
+$("copyLinkBtn").addEventListener("click",()=>{
+  const inp=$("shareUrlInput");
+  navigator.clipboard.writeText(inp.value).then(()=>{
+    showToast("Invite link copied! 🎉");
+    $("copyLinkBtn").textContent="Copied!";
+    setTimeout(()=>{ $("copyLinkBtn").textContent="Copy"; },2000);
+  }).catch(()=>{ inp.select(); document.execCommand("copy"); showToast("Link copied!"); });
 });
-
-// Close share modal on backdrop click
-shareOverlay.addEventListener("click", (e) => {
-  if (e.target === shareOverlay) shareOverlay.classList.add("hidden");
-});
-
-// ─── Room display helpers ─────────────────────────────────────────────────────
 
 function updateRoomDisplay() {
-  const label = ROOM_ID ? "Room: " + ROOM_ID.toUpperCase() : "";
-  roomLabel.textContent       = label;
-  roomNameDisplay.textContent = ROOM_ID ? ROOM_ID.toUpperCase() : "—";
+  const label=ROOM_ID?"Room: "+ROOM_ID.toUpperCase():"";
+  roomLabel.textContent=label;
+  roomNameDisplay.textContent=ROOM_ID?ROOM_ID.toUpperCase():"—";
 }
 
 // ─── Backlog ──────────────────────────────────────────────────────────────────
-
 function updateBacklogTiles() {
-  backlogList.innerHTML = "";
-  if (!items.length) {
-    backlogList.innerHTML = "<div style='font-size:11px;color:#777;'>No items loaded.</div>";
-    itemIndexLabel.textContent = "";
-    return;
-  }
-  const frag = document.createDocumentFragment();
-  items.forEach((text, idx) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "backlog-item-tile" + (idx === currentItemIndex ? " current" : "");
-    const card = document.createElement("div");
-    card.className = "backlog-card";
-    card.setAttribute("role",       "button");
-    card.setAttribute("tabindex",   "0");
-    card.setAttribute("aria-label", `Select item: ${text}`);
-    card.innerHTML = `
-      <div class="card__title">${escapeHtml(text)}</div>
-      <div class="card__date">Item ${idx+1} of ${items.length}</div>
-      <div class="card__arrow">
-        <svg height="14" width="14" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="#fff" d="M12 4l1.41 1.41L8.83 10H20v2H8.83l4.58 4.59L12 18l-8-8z"/>
-        </svg>
-      </div>`;
-    const activate = () => goToItem(idx);
-    card.addEventListener("click",   activate);
-    card.addEventListener("keydown", (e) => { if(e.key==="Enter"||e.key===" ") activate(); });
-    wrapper.appendChild(card);
-    frag.appendChild(wrapper);
+  backlogList.innerHTML="";
+  if(!items.length){ backlogList.innerHTML="<div style='font-size:11px;color:var(--text-muted);font-family:var(--font-mono);'>No items loaded.</div>"; itemIndexLabel.textContent=""; return; }
+  const frag=document.createDocumentFragment();
+  items.forEach((text,idx)=>{
+    const wrapper=document.createElement("div");
+    wrapper.className="backlog-item-tile"+(idx===currentItemIndex?" current":"");
+    const card=document.createElement("div"); card.className="backlog-card";
+    card.setAttribute("role","button"); card.setAttribute("tabindex","0"); card.setAttribute("aria-label",`Select: ${text}`);
+    card.innerHTML=`<div class="card__title">${escapeHtml(text)}</div><div class="card__date">Item ${idx+1} of ${items.length}</div><span class="card__arrow">›</span>`;
+    const activate=()=>goToItem(idx);
+    card.addEventListener("click",activate);
+    card.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")activate();});
+    wrapper.appendChild(card); frag.appendChild(wrapper);
   });
   backlogList.appendChild(frag);
-  itemIndexLabel.textContent = currentItemIndex >= 0
-    ? `Item ${currentItemIndex+1} of ${items.length}` : "";
+  itemIndexLabel.textContent=currentItemIndex>=0?`${currentItemIndex+1}/${items.length}`:"";
 }
-
-function goToItem(newIndex) {
-  if (!items.length || newIndex < 0 || newIndex >= items.length) return;
-  socket?.emit("setBacklogIndex", newIndex);
-}
-
-loadItemsBtn.addEventListener("click", () => {
-  const parsed = (itemsInput.value||"")
-    .split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(0,200);
-  if (!parsed.length) { showToast("No items found in the textarea."); return; }
-  socket?.emit("setBacklog", { items: parsed, currentIndex: 0 });
-  showToast(`${parsed.length} item${parsed.length>1?"s":""} loaded and synced.`);
+function goToItem(n){ if(!items.length||n<0||n>=items.length)return; socket?.emit("setBacklogIndex",n); }
+loadItemsBtn.addEventListener("click",()=>{
+  const parsed=(itemsInput.value||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(0,200);
+  if(!parsed.length){ showToast("No items found."); return; }
+  socket?.emit("setBacklog",{items:parsed,currentIndex:0});
+  showToast(`${parsed.length} item${parsed.length>1?"s":""} synced.`);
 });
-
-prevItemBtn.addEventListener("click", () => goToItem(currentItemIndex-1));
-nextItemBtn.addEventListener("click", () => goToItem(currentItemIndex+1));
+prevItemBtn.addEventListener("click",()=>goToItem(currentItemIndex-1));
+nextItemBtn.addEventListener("click",()=>goToItem(currentItemIndex+1));
 
 // ─── Cards ────────────────────────────────────────────────────────────────────
-
 function renderCards() {
-  cardsContainer.innerHTML = "";
-  const frag = document.createDocumentFragment();
-  FIB_CARDS.forEach((val) => {
-    const div = document.createElement("div");
-    div.className = "vote-card";
-    div.textContent = val;
-    div.dataset.value = val;
-    div.setAttribute("role",       "button");
-    div.setAttribute("tabindex",   "0");
-    div.setAttribute("aria-label", `Vote ${val}`);
-    div.addEventListener("click",   () => handleVote(val));
-    div.addEventListener("keydown", (e) => { if(e.key==="Enter"||e.key===" ") handleVote(val); });
+  cardsContainer.innerHTML="";
+  const frag=document.createDocumentFragment();
+  FIB_CARDS.forEach((val,i)=>{
+    const div=document.createElement("div");
+    div.className="vote-card"; div.textContent=val; div.dataset.value=val;
+    div.setAttribute("data-suit",CARD_SUITS[i%CARD_SUITS.length]);
+    div.setAttribute("role","button"); div.setAttribute("tabindex","0"); div.setAttribute("aria-label",`Vote ${val}`);
+    div.addEventListener("click",()=>handleVote(val));
+    div.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")handleVote(val);});
     frag.appendChild(div);
   });
   cardsContainer.appendChild(frag);
 }
 
 function syncCardState() {
-  document.querySelectorAll(".vote-card").forEach((card) => {
-    const isSelected = card.dataset.value === myCurrentVote;
-    const isRevealed = currentState.revealed;
-    card.classList.toggle("selected",  isSelected);
-    card.classList.toggle("disabled",  isRevealed);
-    card.setAttribute("aria-pressed",  isSelected ? "true" : "false");
-    card.setAttribute("aria-disabled", isRevealed ? "true" : "false");
+  document.querySelectorAll(".vote-card").forEach(card=>{
+    const sel=card.dataset.value===myCurrentVote, rev=currentState.revealed;
+    card.classList.toggle("selected",sel); card.classList.toggle("disabled",rev);
+    card.setAttribute("aria-pressed",sel?"true":"false"); card.setAttribute("aria-disabled",rev?"true":"false");
   });
 }
 
 // ─── Seats ────────────────────────────────────────────────────────────────────
-
 function parseVoteEntry(info) {
-  if (info && typeof info === "object")
-    return { value: info.value ?? "", avatar: info.avatar ?? AVATAR_FILES[0] };
-  return { value: String(info ?? ""), avatar: AVATAR_FILES[0] };
+  if(info&&typeof info==="object") return{value:info.value??"",avatar:info.avatar??AVATAR_FILES[0]};
+  return{value:String(info??""),avatar:AVATAR_FILES[0]};
 }
 
 function renderSeats() {
-  seatsLayer.innerHTML = "";
-  const entries = Object.entries(currentState.votes || {});
-  if (!entries.length) return;
-  entries.sort(([a],[b]) => a.localeCompare(b));
-  const count = entries.length;
-  const seatWidth = count <= 8 ? 100 : count <= 16 ? 76 : 58;
-  const layerSize = count <= 8 ? 420 : count <= 16 ? 460 : 500;
-  const orbitR    = count <= 8 ? 190 : count <= 16 ? 210 : 230;
-  seatsLayer.style.width  = layerSize + "px";
-  seatsLayer.style.height = layerSize + "px";
-  const cx = layerSize / 2, cy = layerSize / 2;
-  const frag = document.createDocumentFragment();
-  entries.forEach(([name, info], i) => {
-    const { value, avatar } = parseVoteEntry(info);
-    const angle = (2 * Math.PI * i) / count - Math.PI / 2;
-    const seat = document.createElement("div");
-    seat.className = "seat";
-    seat.style.setProperty("--seat-width", seatWidth + "px");
-    seat.style.left = (cx + orbitR * Math.cos(angle)) + "px";
-    seat.style.top  = (cy + orbitR * Math.sin(angle)) + "px";
-    const hasVoted = Boolean(value);
-    let valueCls = "seat-value", valueText;
-    if (!currentState.revealed) {
-      valueCls += hasVoted ? " voted-hidden" : " hidden";
-      valueText = hasVoted ? "●" : "–";
-    } else {
-      valueText = value || "–";
-    }
-    seat.innerHTML = `
-      <div class="seat-card">
-        <div class="seat-avatar"><img src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}'s avatar" loading="lazy"/></div>
-        <div class="seat-name">${escapeHtml(name)}</div>
-        <div class="${valueCls}">${escapeHtml(valueText)}</div>
-      </div>`;
+  seatsLayer.innerHTML="";
+  const entries=Object.entries(currentState.votes||{});
+  if(!entries.length) return;
+  entries.sort(([a],[b])=>a.localeCompare(b));
+  const count=entries.length;
+  const seatWidth=count<=8?96:count<=16?72:56;
+  const layerSize=count<=8?420:count<=16?460:500;
+  const orbitR   =count<=8?190:count<=16?210:230;
+  seatsLayer.style.width=layerSize+"px"; seatsLayer.style.height=layerSize+"px";
+  const cx=layerSize/2, cy=layerSize/2;
+  const frag=document.createDocumentFragment();
+  entries.forEach(([name,info],i)=>{
+    const{value,avatar}=parseVoteEntry(info);
+    const angle=(2*Math.PI*i)/count-Math.PI/2;
+    const seat=document.createElement("div"); seat.className="seat";
+    seat.style.setProperty("--seat-width",seatWidth+"px");
+    seat.style.left=(cx+orbitR*Math.cos(angle))+"px";
+    seat.style.top =(cy+orbitR*Math.sin(angle))+"px";
+    const hasVoted=Boolean(value);
+    let cls="seat-value", txt;
+    if(!currentState.revealed){ cls+=hasVoted?" voted-hidden":" hidden"; txt=hasVoted?"●":"–"; }
+    else txt=value||"–";
+    seat.innerHTML=`<div class="seat-card"><div class="seat-avatar"><img src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}'s avatar" loading="lazy"/></div><div class="seat-name">${escapeHtml(name)}</div><div class="${cls}">${escapeHtml(txt)}</div></div>`;
     frag.appendChild(seat);
   });
   seatsLayer.appendChild(frag);
 }
 
 // ─── Participants ─────────────────────────────────────────────────────────────
-
 function renderParticipantsTiles() {
-  participantsList.innerHTML = "";
-  const entries = Object.entries(currentState.votes || {});
-  entries.sort(([a],[b]) => a.localeCompare(b));
-  if (!entries.length) {
-    participantsList.innerHTML = "<div style='font-size:11px;color:#777;'>No participants yet.</div>";
-    return;
-  }
-  const frag = document.createDocumentFragment();
-  entries.forEach(([name, info]) => {
-    const { value, avatar } = parseVoteEntry(info);
+  participantsList.innerHTML="";
+  const entries=Object.entries(currentState.votes||{});
+  entries.sort(([a],[b])=>a.localeCompare(b));
+  if(!entries.length){ participantsList.innerHTML="<div style='font-size:11px;color:var(--text-muted);font-family:var(--font-mono);'>No participants yet.</div>"; return; }
+  const frag=document.createDocumentFragment();
+  entries.forEach(([name,info])=>{
+    const{value,avatar}=parseVoteEntry(info);
     let valText, valColor;
-    if (!currentState.revealed) {
-      valText  = value ? "Voted ✓" : "Waiting…";
-      valColor = value ? "#2a7a2a" : "#aaa";
-    } else {
-      valText  = value || "–";
-      valColor = "#333";
-    }
-    const tile = document.createElement("div");
-    tile.className = "participant-tile";
-    tile.innerHTML = `
-      <div class="participant-left">
-        <div class="participant-avatar"><img src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}'s avatar" loading="lazy"/></div>
-        <span class="participant-name">${escapeHtml(name)}</span>
-      </div>
-      <span class="participant-val" style="color:${valColor}">${escapeHtml(valText)}</span>`;
+    if(!currentState.revealed){ valText=value?"Voted ✓":"Waiting…"; valColor=value?"var(--green)":"var(--text-muted)"; }
+    else{ valText=value||"–"; valColor="var(--text)"; }
+    const tile=document.createElement("div"); tile.className="participant-tile";
+    tile.innerHTML=`<div class="participant-left"><div class="participant-avatar"><img src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}'s avatar" loading="lazy"/></div><span class="participant-name">${escapeHtml(name)}</span></div><span class="participant-val" style="color:${valColor}">${escapeHtml(valText)}</span>`;
     frag.appendChild(tile);
   });
   participantsList.appendChild(frag);
 }
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
-
 function updateStatusAndSummary() {
-  const entries    = Object.entries(currentState.votes || {});
-  const total      = entries.length;
-  const votedCount = entries.filter(([,info]) => Boolean(parseVoteEntry(info).value)).length;
-  if (!currentState.revealed) {
-    statusText.textContent  = total
-      ? `${votedCount} of ${total} voted. Click "Reveal" when everyone's done.`
-      : "No votes yet. Pick a card to cast your vote.";
-    summaryText.textContent = tableAverage.textContent = "";
-    revealBtn.disabled = total === 0;
-    return;
+  const entries=Object.entries(currentState.votes||{});
+  const total=entries.length;
+  const votedCount=entries.filter(([,i])=>Boolean(parseVoteEntry(i).value)).length;
+  if(!currentState.revealed){
+    statusText.textContent=total?`${votedCount} / ${total} voted`:"Pick a card to vote.";
+    summaryText.textContent=tableAverage.textContent=""; revealBtn.disabled=total===0; return;
   }
-  statusText.textContent = `Revealed — ${total} participant${total!==1?"s":""}.`;
-  const numerics = entries
-    .map(([,info]) => parseFloat(parseVoteEntry(info).value))
-    .filter(n => Number.isFinite(n));
-  if (numerics.length) {
-    const min = Math.min(...numerics), max = Math.max(...numerics);
-    const avg = numerics.reduce((a,b)=>a+b,0) / numerics.length;
-    summaryText.textContent  = `Min: ${min} | Max: ${max} | Avg: ${avg.toFixed(2)}`;
-    tableAverage.textContent = avg.toFixed(2);
-  } else {
-    summaryText.textContent  = "No numeric votes to summarise.";
-    tableAverage.textContent = "";
-  }
+  statusText.textContent=`Revealed — ${total} player${total!==1?"s":""}`;
+  const nums=entries.map(([,i])=>parseFloat(parseVoteEntry(i).value)).filter(n=>Number.isFinite(n));
+  if(nums.length){
+    const min=Math.min(...nums),max=Math.max(...nums),avg=nums.reduce((a,b)=>a+b,0)/nums.length;
+    summaryText.textContent=`min ${min}  ·  max ${max}  ·  avg ${avg.toFixed(2)}`;
+    tableAverage.textContent=avg.toFixed(2);
+  } else{ summaryText.textContent="No numeric votes."; tableAverage.textContent=""; }
 }
 
-function renderAll() {
-  syncCardState();
-  renderSeats();
-  renderParticipantsTiles();
-  updateStatusAndSummary();
-}
+function renderAll(){ syncCardState(); renderSeats(); renderParticipantsTiles(); updateStatusAndSummary(); }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
-
-function handleVote(value) {
-  if (currentState.revealed) return;
-  myCurrentVote = value;
-  syncCardState();
-  socket?.emit("vote", value);
-}
-function handleReveal() { socket?.emit("reveal"); }
-function handleReset()  {
-  myCurrentVote = null;
-  syncCardState();
-  socket?.emit("reset");
-}
+function handleVote(v){ if(currentState.revealed)return; myCurrentVote=v; syncCardState(); socket?.emit("vote",v); }
+function handleReveal(){ socket?.emit("reveal"); }
+function handleReset(){ myCurrentVote=null; syncCardState(); socket?.emit("reset"); }
 
 // ─── Socket ───────────────────────────────────────────────────────────────────
+function joinRoom(){ if(!socket||!hasJoined||!ROOM_ID)return; socket.emit("joinRoom",{roomId:ROOM_ID,name:myName,avatar:myAvatarUrl}); }
 
-function joinRoom() {
-  if (!socket || !hasJoined || !ROOM_ID) return;
-  socket.emit("joinRoom", { roomId: ROOM_ID, name: myName, avatar: myAvatarUrl });
-}
-
-function connectSocket() {
-  socket = io({ reconnectionDelay: 1000, reconnectionDelayMax: 5000 });
-
-  socket.on("connect", () => {
-    if (hasJoined) {
-      joinRoom();
-      statusText.textContent = "Reconnected — rejoined room.";
-      showToast("Reconnected.");
-    } else {
-      statusText.textContent = "Connected.";
-    }
-  });
-
-  socket.on("disconnect", (reason) => {
-    statusText.textContent = `Disconnected (${reason}). Reconnecting…`;
-  });
-
-  socket.on("connect_error", () => {
-    statusText.textContent = "Connection error — retrying…";
-  });
-
-  socket.on("serverShutdown", (msg) => {
-    showToast(msg || "Server restarting — please refresh shortly.", 8000);
-    statusText.textContent = "⚠ Server is restarting…";
-  });
-
-  socket.on("error", (msg) => {
-    showToast(msg || "An error occurred.", 3000);
-  });
-
-  socket.on("stateUpdate", (state) => {
-    currentState = state ?? { revealed: false, votes: {} };
-    const myEntry = currentState.votes[myName];
-    if (!myEntry || !parseVoteEntry(myEntry).value) myCurrentVote = null;
+function connectSocket(){
+  socket=io({reconnectionDelay:1000,reconnectionDelayMax:5000});
+  socket.on("connect",()=>{ if(hasJoined){ joinRoom(); statusText.textContent="Reconnected."; showToast("Reconnected."); } else statusText.textContent="Connected."; });
+  socket.on("disconnect",r=>{ statusText.textContent=`Disconnected (${r}). Reconnecting…`; });
+  socket.on("connect_error",()=>{ statusText.textContent="Connection error — retrying…"; });
+  socket.on("serverShutdown",m=>{ showToast(m||"Server restarting…",8000); statusText.textContent="⚠ Server restarting…"; });
+  socket.on("error",m=>showToast(m||"Error.",3000));
+  socket.on("stateUpdate",state=>{
+    currentState=state??{revealed:false,votes:{}};
+    const e=currentState.votes[myName];
+    if(!e||!parseVoteEntry(e).value) myCurrentVote=null;
     renderAll();
   });
-
-  socket.on("backlogUpdate", ({ items: newItems, currentIndex: newIndex }) => {
-    items            = Array.isArray(newItems) ? newItems : [];
-    currentItemIndex = typeof newIndex === "number" ? newIndex : -1;
-    updateBacklogTiles();
-  });
+  socket.on("backlogUpdate",({items:ni,currentIndex:idx})=>{ items=Array.isArray(ni)?ni:[]; currentItemIndex=typeof idx==="number"?idx:-1; updateBacklogTiles(); });
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
+revealBtn.addEventListener("click",handleReveal);
+resetBtn.addEventListener("click",handleReset);
 
-revealBtn.addEventListener("click", handleReveal);
-resetBtn.addEventListener("click",  handleReset);
-
-window.addEventListener("load", () => {
-  // Build avatar grids for both flows
-  buildAvatarGrid(
-    "createAvatarGrid",
-    () => myAvatarIndexCreate,
-    (i) => { myAvatarIndexCreate = i; }
-  );
-  buildAvatarGrid(
-    "joinAvatarGrid",
-    () => myAvatarIndexJoin,
-    (i) => { myAvatarIndexJoin = i; }
-  );
-
-  // If URL already has a room hash, pre-fill the join code and skip to join flow
-  const existingRoom = getRoomIdFromUrl();
-  if (existingRoom) {
-    $("joinRoomInput").value = existingRoom;
-    choiceOverlay.classList.add("hidden");
-    joinOverlay.classList.remove("hidden");
-    $("joinNameInput").focus();
-  } else {
-    showChoiceScreen();
-  }
-
+window.addEventListener("load",()=>{
+  buildAvatarGrid("createAvatarGrid",()=>myAvatarIndexCreate,i=>{ myAvatarIndexCreate=i; });
+  buildAvatarGrid("joinAvatarGrid",  ()=>myAvatarIndexJoin,  i=>{ myAvatarIndexJoin=i; });
+  const existing=getRoomIdFromUrl();
+  if(existing){ $("joinRoomInput").value=existing; choiceOverlay.classList.add("hidden"); joinOverlay.classList.remove("hidden"); $("joinNameInput").focus(); }
+  else showChoiceScreen();
   updateRoomDisplay();
 });
 
