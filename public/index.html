@@ -36,6 +36,27 @@
       --font-mono:   'DM Mono', monospace;
     }
 
+    /* Light theme overrides */
+    :root.theme-light {
+      --bg:          #f5f5fa;
+      --surface:     #ffffff;
+      --surface2:    #f7f8fc;
+      --surface3:    #ebedf7;
+      --border:      rgba(0,0,0,.08);
+      --border-hi:   rgba(0,0,0,.16);
+      --accent:      #f5b300;
+      --accent-dim:  rgba(245,179,0,.12);
+      --accent-glow: rgba(245,179,0,.45);
+      --text:        #151626;
+      --text-muted:  #737792;
+      --text-dim:    #50546b;
+      --green:       #059669;
+      --green-dim:   rgba(5,150,105,.10);
+      --red:         #dc2626;
+      --blue:        #2563eb;
+      --blue-dim:    rgba(37,99,235,.12);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html { scroll-behavior: smooth; }
@@ -46,9 +67,12 @@
       color: var(--text);
       display: flex; flex-direction: column;
       min-height: 100vh;
-      /* Subtle dot-grid texture */
-      background-image: radial-gradient(circle, rgba(255,255,255,.03) 1px, transparent 1px);
+      /* dot-grid texture */
+      background-image: radial-gradient(circle, rgba(0,0,0,.04) 1px, transparent 1px);
       background-size: 28px 28px;
+    }
+    :root.theme-light body {
+      background-image: radial-gradient(circle, rgba(0,0,0,.03) 1px, transparent 1px);
     }
 
     /* ─── Scrollbar ──────────────────────────────────────────────────────────── */
@@ -65,6 +89,9 @@
       height: 58px;
       display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 100;
+    }
+    :root.theme-light header {
+      background: rgba(245,245,250,.9);
     }
 
     .header-logo {
@@ -100,20 +127,22 @@
 
     .share-btn {
       display: inline-flex; align-items: center; gap: 6px;
-      background: var(--accent-dim);
-      border: 1px solid rgba(245,200,66,.3);
-      color: var(--accent);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
       border-radius: 20px;
-      padding: 5px 14px;
+      padding: 5px 12px;
       font-family: var(--font-head);
       font-size: 12px; font-weight: 600;
       cursor: pointer;
-      transition: background .2s, box-shadow .2s;
+      transition: background .2s, box-shadow .2s, border-color .2s, color .2s;
       white-space: nowrap;
     }
     .share-btn:hover {
-      background: rgba(245,200,66,.22);
-      box-shadow: 0 0 12px var(--accent-glow);
+      background: var(--surface3);
+      border-color: var(--border-hi);
+      color: var(--text);
+      box-shadow: 0 0 12px rgba(0,0,0,.2);
     }
 
     /* ─── Main ───────────────────────────────────────────────────────────────── */
@@ -147,7 +176,7 @@
       resize: vertical; min-height: 80px;
       background: var(--surface2); color: var(--text);
       font-family: var(--font-mono);
-      transition: border-color .2s;
+      transition: border-color .2s, background .2s;
     }
     textarea:focus { outline: none; border-color: var(--accent); }
 
@@ -237,6 +266,9 @@
       position: relative; z-index: 1;
       gap: 4px;
     }
+    :root.theme-light .table-circle {
+      box-shadow: 0 0 40px rgba(0,0,0,.15), inset 0 0 24px rgba(0,0,0,.05);
+    }
     .table-label {
       font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
       text-transform: uppercase; color: var(--text-muted);
@@ -269,7 +301,7 @@
       display: flex; flex-direction: column;
       align-items: center; gap: 4px;
       width: var(--seat-width, 96px);
-      transition: border-color .2s, box-shadow .2s;
+      transition: border-color .2s, box-shadow .2s, background .2s;
     }
     .seat-card:hover { border-color: rgba(245,200,66,.3); box-shadow: 0 4px 20px rgba(0,0,0,.5), 0 0 12px var(--accent-glow); }
     .seat-avatar { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--border-hi); }
@@ -364,7 +396,6 @@
       color: var(--text-dim);
       position: relative;
     }
-    /* Suit watermark */
     .vote-card::after {
       content: attr(data-suit);
       position: absolute; bottom: 3px; right: 5px;
@@ -463,6 +494,9 @@
       padding: 28px; width: 420px; max-width: 94vw;
       animation: slideUp .25s cubic-bezier(.34,1.2,.64,1);
     }
+    :root.theme-light .dialog {
+      box-shadow: 0 18px 60px rgba(0,0,0,.15);
+    }
     @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
 
     .dialog-header { margin-bottom: 6px; }
@@ -485,7 +519,7 @@
       border: 1px solid var(--border-hi);
       background: var(--surface2); color: var(--text);
       font-size: 14px; font-family: var(--font-head); font-weight: 600;
-      transition: border-color .2s;
+      transition: border-color .2s, background .2s;
     }
     .dialog-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
     .dialog-row input.error { border-color: var(--red); }
@@ -496,7 +530,7 @@
     .avatar-option {
       width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
       border: 2px solid var(--border); cursor: pointer;
-      transition: border-color .15s, box-shadow .15s, transform .15s;
+      transition: border-color .15s, box-shadow .15s, transform .15s, background .15s;
     }
     .avatar-option:hover { transform: scale(1.08); border-color: var(--border-hi); }
     .avatar-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -571,6 +605,9 @@
     <h1>Planning Poker</h1>
   </div>
   <div class="header-right">
+    <button class="share-btn" id="themeToggleBtn" type="button" aria-label="Toggle dark or light mode">
+      🌙
+    </button>
     <span class="room-chip" id="roomLabel"></span>
     <button class="share-btn" id="shareBtnHeader" type="button">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -757,7 +794,6 @@
   </div>
 </div>
 
-<!-- ─── Socket.IO + App logic (unchanged) ────────────────────────────────────── -->
 <script src="/socket.io/socket.io.js"></script>
 <script>
 "use strict";
@@ -784,6 +820,56 @@ let toastTimer = null;
 function showToast(msg, ms=2800) {
   const el=$("toast"); el.textContent=msg; el.classList.add("show");
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),ms);
+}
+
+// ─── Theme toggle ─────────────────────────────────────────────────────────────
+const THEME_STORAGE_KEY = "planningPokerTheme";
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === "light") {
+    root.classList.add("theme-light");
+  } else {
+    root.classList.remove("theme-light");
+  }
+  const btn = document.getElementById("themeToggleBtn");
+  if (btn) {
+    const isLight = theme === "light";
+    btn.textContent = isLight ? "☀️" : "🌙";
+    btn.setAttribute("aria-label", isLight ? "Switch to dark mode" : "Switch to light mode");
+  }
+}
+
+function loadTheme() {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) || "dark";
+  } catch {
+    return "dark";
+  }
+}
+
+function saveTheme(theme) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // ignore
+  }
+}
+
+function initThemeToggle() {
+  const current = loadTheme();
+  applyTheme(current);
+
+  const btn = document.getElementById("themeToggleBtn");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    const next = document.documentElement.classList.contains("theme-light")
+      ? "dark"
+      : "light";
+    applyTheme(next);
+    saveTheme(next);
+  });
 }
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
@@ -1063,6 +1149,7 @@ revealBtn.addEventListener("click",handleReveal);
 resetBtn.addEventListener("click",handleReset);
 
 window.addEventListener("load",()=>{
+  initThemeToggle();
   buildAvatarGrid("createAvatarGrid",()=>myAvatarIndexCreate,i=>{ myAvatarIndexCreate=i; });
   buildAvatarGrid("joinAvatarGrid",  ()=>myAvatarIndexJoin,  i=>{ myAvatarIndexJoin=i; });
   const existing=getRoomIdFromUrl();
