@@ -9,52 +9,31 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <style>
-    /* ─── Design tokens ──────────────────────────────────────────────────────── */
+    /* ─── Design tokens (light default) ─────────────────────────────────────── */
     :root {
-      --bg:          #0d0f14;
-      --surface:     #13161e;
-      --surface2:    #1a1e2a;
-      --surface3:    #222738;
-      --border:      rgba(255,255,255,.07);
-      --border-hi:   rgba(255,255,255,.14);
-      --accent:      #f5c842;
-      --accent-dim:  rgba(245,200,66,.15);
-      --accent-glow: rgba(245,200,66,.35);
-      --text:        #e8eaf0;
-      --text-muted:  #6b7080;
-      --text-dim:    #9499a8;
-      --green:       #34d399;
-      --green-dim:   rgba(52,211,153,.12);
-      --red:         #f87171;
-      --blue:        #60a5fa;
-      --blue-dim:    rgba(96,165,250,.12);
+      --bg:          #f5f5fa;
+      --surface:     #ffffff;
+      --surface2:    #f0f1f7;
+      --surface3:    #e4e6f0;
+      --border:      rgba(0,0,0,.08);
+      --border-hi:   rgba(0,0,0,.15);
+      --accent:      #f0a500;
+      --accent-dim:  rgba(240,165,0,.12);
+      --accent-glow: rgba(240,165,0,.30);
+      --text:        #1a1d2e;
+      --text-muted:  #7a7f96;
+      --text-dim:    #50556b;
+      --green:       #059669;
+      --green-dim:   rgba(5,150,105,.10);
+      --red:         #dc2626;
+      --blue:        #2563eb;
+      --blue-dim:    rgba(37,99,235,.10);
       --radius-sm:   6px;
       --radius-md:   12px;
       --radius-lg:   18px;
       --radius-xl:   24px;
       --font-head:   'Syne', sans-serif;
       --font-mono:   'DM Mono', monospace;
-    }
-
-    /* Light theme overrides */
-    :root.theme-light {
-      --bg:          #f5f5fa;
-      --surface:     #ffffff;
-      --surface2:    #f7f8fc;
-      --surface3:    #ebedf7;
-      --border:      rgba(0,0,0,.08);
-      --border-hi:   rgba(0,0,0,.16);
-      --accent:      #f5b300;
-      --accent-dim:  rgba(245,179,0,.12);
-      --accent-glow: rgba(245,179,0,.45);
-      --text:        #151626;
-      --text-muted:  #737792;
-      --text-dim:    #50546b;
-      --green:       #059669;
-      --green-dim:   rgba(5,150,105,.10);
-      --red:         #dc2626;
-      --blue:        #2563eb;
-      --blue-dim:    rgba(37,99,235,.12);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -67,12 +46,9 @@
       color: var(--text);
       display: flex; flex-direction: column;
       min-height: 100vh;
-      /* dot-grid texture */
-      background-image: radial-gradient(circle, rgba(0,0,0,.04) 1px, transparent 1px);
+      /* Subtle dot-grid texture */
+      background-image: radial-gradient(circle, rgba(0,0,0,.06) 1px, transparent 1px);
       background-size: 28px 28px;
-    }
-    :root.theme-light body {
-      background-image: radial-gradient(circle, rgba(0,0,0,.03) 1px, transparent 1px);
     }
 
     /* ─── Scrollbar ──────────────────────────────────────────────────────────── */
@@ -82,16 +58,13 @@
 
     /* ─── Header ─────────────────────────────────────────────────────────────── */
     header {
-      background: rgba(13,15,20,.85);
+      background: rgba(245,245,250,.92);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
       padding: 0 28px;
       height: 58px;
       display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 100;
-    }
-    :root.theme-light header {
-      background: rgba(245,245,250,.9);
     }
 
     .header-logo {
@@ -127,22 +100,20 @@
 
     .share-btn {
       display: inline-flex; align-items: center; gap: 6px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
+      background: var(--accent-dim);
+      border: 1px solid rgba(245,200,66,.3);
+      color: var(--accent);
       border-radius: 20px;
-      padding: 5px 12px;
+      padding: 5px 14px;
       font-family: var(--font-head);
       font-size: 12px; font-weight: 600;
       cursor: pointer;
-      transition: background .2s, box-shadow .2s, border-color .2s, color .2s;
+      transition: background .2s, box-shadow .2s;
       white-space: nowrap;
     }
     .share-btn:hover {
-      background: var(--surface3);
-      border-color: var(--border-hi);
-      color: var(--text);
-      box-shadow: 0 0 12px rgba(0,0,0,.2);
+      background: rgba(245,200,66,.22);
+      box-shadow: 0 0 12px var(--accent-glow);
     }
 
     /* ─── Main ───────────────────────────────────────────────────────────────── */
@@ -176,7 +147,7 @@
       resize: vertical; min-height: 80px;
       background: var(--surface2); color: var(--text);
       font-family: var(--font-mono);
-      transition: border-color .2s, background .2s;
+      transition: border-color .2s;
     }
     textarea:focus { outline: none; border-color: var(--accent); }
 
@@ -260,14 +231,11 @@
       width: 240px; height: 240px; border-radius: 50%;
       background: var(--surface2);
       border: 2px solid var(--border-hi);
-      box-shadow: 0 0 60px rgba(0,0,0,.5), inset 0 0 40px rgba(0,0,0,.3);
+      box-shadow: 0 4px 32px rgba(0,0,0,.10), inset 0 0 24px rgba(0,0,0,.04);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       position: relative; z-index: 1;
       gap: 4px;
-    }
-    :root.theme-light .table-circle {
-      box-shadow: 0 0 40px rgba(0,0,0,.15), inset 0 0 24px rgba(0,0,0,.05);
     }
     .table-label {
       font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
@@ -301,7 +269,7 @@
       display: flex; flex-direction: column;
       align-items: center; gap: 4px;
       width: var(--seat-width, 96px);
-      transition: border-color .2s, box-shadow .2s, background .2s;
+      transition: border-color .2s, box-shadow .2s;
     }
     .seat-card:hover { border-color: rgba(245,200,66,.3); box-shadow: 0 4px 20px rgba(0,0,0,.5), 0 0 12px var(--accent-glow); }
     .seat-avatar { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--border-hi); }
@@ -396,6 +364,7 @@
       color: var(--text-dim);
       position: relative;
     }
+    /* Suit watermark */
     .vote-card::after {
       content: attr(data-suit);
       position: absolute; bottom: 3px; right: 5px;
@@ -490,12 +459,9 @@
       background: var(--surface);
       border: 1px solid var(--border-hi);
       border-radius: var(--radius-xl);
-      box-shadow: 0 24px 80px rgba(0,0,0,.6);
+      box-shadow: 0 16px 48px rgba(0,0,0,.14);
       padding: 28px; width: 420px; max-width: 94vw;
       animation: slideUp .25s cubic-bezier(.34,1.2,.64,1);
-    }
-    :root.theme-light .dialog {
-      box-shadow: 0 18px 60px rgba(0,0,0,.15);
     }
     @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
 
@@ -519,7 +485,7 @@
       border: 1px solid var(--border-hi);
       background: var(--surface2); color: var(--text);
       font-size: 14px; font-family: var(--font-head); font-weight: 600;
-      transition: border-color .2s, background .2s;
+      transition: border-color .2s;
     }
     .dialog-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
     .dialog-row input.error { border-color: var(--red); }
@@ -530,7 +496,7 @@
     .avatar-option {
       width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
       border: 2px solid var(--border); cursor: pointer;
-      transition: border-color .15s, box-shadow .15s, transform .15s, background .15s;
+      transition: border-color .15s, box-shadow .15s, transform .15s;
     }
     .avatar-option:hover { transform: scale(1.08); border-color: var(--border-hi); }
     .avatar-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -594,6 +560,41 @@
     }
     .share-url-row button:hover { background: rgba(245,200,66,.22); box-shadow: 0 0 10px var(--accent-glow); }
     .share-hint { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px; }
+
+    /* ─── CSV upload button ──────────────────────────────────────────────────── */
+    .csv-upload-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: var(--font-head); font-size: 11px; font-weight: 700;
+      color: var(--accent); cursor: pointer;
+      padding: 3px 10px;
+      border: 1px solid rgba(240,165,0,.35);
+      border-radius: 20px;
+      background: var(--accent-dim);
+      transition: background .15s, box-shadow .15s;
+      white-space: nowrap;
+      letter-spacing: .3px;
+    }
+    .csv-upload-btn:hover {
+      background: rgba(240,165,0,.2);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    /* ─── CSV preview table rows ─────────────────────────────────────────────── */
+    #csvPreviewBody tr { border-bottom: 1px solid var(--border); }
+    #csvPreviewBody tr:last-child { border-bottom: none; }
+    #csvPreviewBody tr:hover td { background: var(--surface2); }
+    #csvPreviewBody td {
+      padding: 7px 8px; vertical-align: top;
+      font-size: 12px; color: var(--text);
+    }
+    #csvPreviewBody td:first-child {
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--accent); font-weight: 500; white-space: nowrap;
+    }
+    #csvPreviewBody .row-skip td { opacity: .4; text-decoration: line-through; }
+    #csvPreviewBody .row-skip td:first-child::after {
+      content: " (skip)"; font-size: 10px; color: var(--text-muted);
+    }
   </style>
 </head>
 <body>
@@ -605,9 +606,6 @@
     <h1>Planning Poker</h1>
   </div>
   <div class="header-right">
-    <button class="share-btn" id="themeToggleBtn" type="button" aria-label="Toggle dark or light mode">
-      🌙
-    </button>
     <span class="room-chip" id="roomLabel"></span>
     <button class="share-btn" id="shareBtnHeader" type="button">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -671,7 +669,14 @@
         <div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">No items loaded.</div>
       </div>
       <div class="backlog-input">
-        <label for="itemsInput" style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);">Add items</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label for="itemsInput" style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);">Add items</label>
+          <label class="csv-upload-btn" title="Upload CSV (columns: ID, Description)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import CSV
+            <input id="csvFileInput" type="file" accept=".csv,text/csv" style="display:none;" aria-label="Import stories from CSV" />
+          </label>
+        </div>
         <textarea id="itemsInput" placeholder="Story 1&#10;Story 2&#10;Story 3"></textarea>
         <div class="backlog-buttons">
           <button id="loadItemsBtn" class="action-button primary"    type="button">Load</button>
@@ -794,6 +799,36 @@
   </div>
 </div>
 
+<!-- ─── Socket.IO + App logic (unchanged) ────────────────────────────────────── -->
+<!-- ═══ CSV Preview modal ════════════════════════════════════════════════════ -->
+<div id="csvOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="csvTitle">
+  <div class="dialog" style="width:520px;max-height:90vh;display:flex;flex-direction:column;">
+    <div class="dialog-header">
+      <h2 id="csvTitle">Import User Stories</h2>
+      <p id="csvSubtitle">Review the stories parsed from your CSV before loading them.</p>
+    </div>
+    <div class="divider"></div>
+    <!-- Parsed preview table -->
+    <div style="flex:1;overflow-y:auto;margin-bottom:14px;">
+      <table id="csvPreviewTable" style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:6px 8px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border);width:70px;">ID</th>
+            <th style="text-align:left;padding:6px 8px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border);">Description</th>
+          </tr>
+        </thead>
+        <tbody id="csvPreviewBody"></tbody>
+      </table>
+    </div>
+    <!-- Error banner (shown only on parse errors) -->
+    <div id="csvErrorBanner" class="hidden" style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);border-radius:var(--radius-sm);padding:10px 12px;font-family:var(--font-mono);font-size:12px;color:var(--red);margin-bottom:12px;"></div>
+    <div class="dialog-footer">
+      <button id="csvCancelBtn"  class="action-button secondary" type="button">Cancel</button>
+      <button id="csvConfirmBtn" class="action-button primary"   type="button">Load Stories</button>
+    </div>
+  </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 "use strict";
@@ -820,56 +855,6 @@ let toastTimer = null;
 function showToast(msg, ms=2800) {
   const el=$("toast"); el.textContent=msg; el.classList.add("show");
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),ms);
-}
-
-// ─── Theme toggle ─────────────────────────────────────────────────────────────
-const THEME_STORAGE_KEY = "planningPokerTheme";
-
-function applyTheme(theme) {
-  const root = document.documentElement;
-  if (theme === "light") {
-    root.classList.add("theme-light");
-  } else {
-    root.classList.remove("theme-light");
-  }
-  const btn = document.getElementById("themeToggleBtn");
-  if (btn) {
-    const isLight = theme === "light";
-    btn.textContent = isLight ? "☀️" : "🌙";
-    btn.setAttribute("aria-label", isLight ? "Switch to dark mode" : "Switch to light mode");
-  }
-}
-
-function loadTheme() {
-  try {
-    return localStorage.getItem(THEME_STORAGE_KEY) || "dark";
-  } catch {
-    return "dark";
-  }
-}
-
-function saveTheme(theme) {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } catch {
-    // ignore
-  }
-}
-
-function initThemeToggle() {
-  const current = loadTheme();
-  applyTheme(current);
-
-  const btn = document.getElementById("themeToggleBtn");
-  if (!btn) return;
-
-  btn.addEventListener("click", () => {
-    const next = document.documentElement.classList.contains("theme-light")
-      ? "dark"
-      : "light";
-    applyTheme(next);
-    saveTheme(next);
-  });
 }
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
@@ -1022,6 +1007,171 @@ loadItemsBtn.addEventListener("click",()=>{
 prevItemBtn.addEventListener("click",()=>goToItem(currentItemIndex-1));
 nextItemBtn.addEventListener("click",()=>goToItem(currentItemIndex+1));
 
+// ─── CSV Import ───────────────────────────────────────────────────────────────
+
+/**
+ * Robustly parse a CSV string with ID + Description columns.
+ * Handles: quoted fields, commas inside quotes, Windows line-endings,
+ * missing headers, extra columns (ignored), BOM prefix.
+ *
+ * Returns { rows: [{id, description}], errors: string[] }
+ */
+function parseCSV(raw) {
+  // Strip UTF-8 BOM if present
+  const text = raw.replace(/^\uFEFF/, "").trim();
+  const lines = text.split(/\r?\n/);
+  const errors = [];
+  const rows   = [];
+
+  if (!lines.length) return { rows, errors: ["File is empty."] };
+
+  // Tokenise one CSV line into fields (handles quoted fields with embedded commas/newlines)
+  function tokenise(line) {
+    const fields = [];
+    let cur = "", inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuote) {
+        if (ch === '"') {
+          // Escaped quote?
+          if (line[i + 1] === '"') { cur += '"'; i++; }
+          else inQuote = false;
+        } else {
+          cur += ch;
+        }
+      } else {
+        if (ch === '"') { inQuote = true; }
+        else if (ch === ',') { fields.push(cur.trim()); cur = ""; }
+        else { cur += ch; }
+      }
+    }
+    fields.push(cur.trim());
+    return fields;
+  }
+
+  // Detect header row — look for "id" and "description" (case-insensitive)
+  const headerFields = tokenise(lines[0]).map(f => f.toLowerCase().replace(/[^a-z0-9]/g,""));
+  const idCol   = headerFields.findIndex(f => f === "id"          || f === "storyid"    || f === "issueid");
+  const descCol = headerFields.findIndex(f => f === "description" || f === "desc"       || f === "summary"
+                                           || f === "title"       || f === "story"      || f === "name");
+
+  const hasHeader = idCol !== -1 || descCol !== -1;
+  const startLine = hasHeader ? 1 : 0;
+
+  if (!hasHeader) {
+    errors.push("No recognised header row found. Assuming column 1 = ID, column 2 = Description.");
+  }
+
+  const resolvedIdCol   = idCol   !== -1 ? idCol   : 0;
+  const resolvedDescCol = descCol !== -1 ? descCol : 1;
+
+  for (let i = startLine; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const fields = tokenise(line);
+    const id   = (fields[resolvedIdCol]   || "").trim();
+    const desc = (fields[resolvedDescCol] || "").trim();
+
+    if (!desc) {
+      errors.push(`Row ${i + 1}: missing Description — skipped.`);
+      rows.push({ id, description: desc, skip: true });
+      continue;
+    }
+
+    rows.push({ id, description: desc, skip: false });
+  }
+
+  if (!rows.filter(r => !r.skip).length) {
+    errors.push("No valid rows found after parsing.");
+  }
+
+  return { rows, errors };
+}
+
+// Holds parsed rows while the preview modal is open
+let csvParsedRows = [];
+
+// Open preview modal with parsed data
+function openCsvPreview(raw) {
+  const { rows, errors } = parseCSV(raw);
+  csvParsedRows = rows;
+
+  // Populate table
+  const tbody = $("csvPreviewBody");
+  tbody.innerHTML = "";
+  const frag = document.createDocumentFragment();
+
+  rows.forEach(({ id, description, skip }) => {
+    const tr = document.createElement("tr");
+    if (skip) tr.className = "row-skip";
+    tr.innerHTML = `<td>${escapeHtml(id || "—")}</td><td>${escapeHtml(description || "(empty)")}</td>`;
+    frag.appendChild(tr);
+  });
+  tbody.appendChild(frag);
+
+  // Show/hide error banner
+  const banner = $("csvErrorBanner");
+  if (errors.length) {
+    banner.textContent = errors.join(" · ");
+    banner.classList.remove("hidden");
+  } else {
+    banner.classList.add("hidden");
+  }
+
+  const validCount = rows.filter(r => !r.skip).length;
+  $("csvSubtitle").textContent =
+    `${validCount} stor${validCount !== 1 ? "ies" : "y"} ready to load` +
+    (errors.length ? ` — ${errors.length} warning${errors.length > 1 ? "s" : ""}` : ".") ;
+
+  // Disable confirm if nothing to load
+  $("csvConfirmBtn").disabled = validCount === 0;
+
+  $("csvOverlay").classList.remove("hidden");
+}
+
+// Wire up file input
+$("csvFileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Reset so selecting the same file again still fires change
+  e.target.value = "";
+
+  const reader = new FileReader();
+  reader.onload = (ev) => openCsvPreview(ev.target.result);
+  reader.onerror = () => showToast("Could not read the file.", 3000);
+  reader.readAsText(file, "UTF-8");
+});
+
+// Confirm: load valid rows into the room
+$("csvConfirmBtn").addEventListener("click", () => {
+  const validItems = csvParsedRows
+    .filter(r => !r.skip)
+    .map(r => r.id ? `[${r.id}] ${r.description}` : r.description)
+    .slice(0, 200);
+
+  if (!validItems.length) { showToast("No valid stories to load."); return; }
+
+  socket?.emit("setBacklog", { items: validItems, currentIndex: 0 });
+  showToast(`${validItems.length} stor${validItems.length !== 1 ? "ies" : "y"} imported from CSV.`);
+
+  $("csvOverlay").classList.add("hidden");
+  csvParsedRows = [];
+});
+
+// Cancel
+$("csvCancelBtn").addEventListener("click", () => {
+  $("csvOverlay").classList.add("hidden");
+  csvParsedRows = [];
+});
+$("csvOverlay").addEventListener("click", (e) => {
+  if (e.target === $("csvOverlay")) {
+    $("csvOverlay").classList.add("hidden");
+    csvParsedRows = [];
+  }
+});
+
 // ─── Cards ────────────────────────────────────────────────────────────────────
 function renderCards() {
   cardsContainer.innerHTML="";
@@ -1149,7 +1299,6 @@ revealBtn.addEventListener("click",handleReveal);
 resetBtn.addEventListener("click",handleReset);
 
 window.addEventListener("load",()=>{
-  initThemeToggle();
   buildAvatarGrid("createAvatarGrid",()=>myAvatarIndexCreate,i=>{ myAvatarIndexCreate=i; });
   buildAvatarGrid("joinAvatarGrid",  ()=>myAvatarIndexJoin,  i=>{ myAvatarIndexJoin=i; });
   const existing=getRoomIdFromUrl();
